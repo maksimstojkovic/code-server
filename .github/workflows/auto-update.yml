@@ -78,13 +78,15 @@ jobs:
     if: needs.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Read pinned versions
         id: versions
         run: |
           echo "code_server=$(sed -n 's/^CODE_SERVER_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
           echo "opencode=$(sed -n 's/^OPENCODE_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v4
 
       - uses: docker/login-action@v4
         with:
@@ -98,6 +100,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           build-args: |
             CODE_SERVER_VERSION=${{ steps.versions.outputs.code_server }}
             OPENCODE_VERSION=${{ steps.versions.outputs.opencode }}
