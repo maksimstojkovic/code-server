@@ -1,0 +1,11 @@
+services:
+  opencode:
+    image: ghcr.io/maksimstojkovic/code-server:latest
+    container_name: opencode
+    environment:
+      - TZ=Australia/Sydney
+    volumes:
+      - /media/data/docker/opencode/config:/home/coder
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

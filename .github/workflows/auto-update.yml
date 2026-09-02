@@ -1,0 +1,109 @@
+name: auto-update
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: auto-update
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.bump.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest release versions
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "code_server=$(gh api repos/coder/code-server/releases/latest --jq .tag_name | sed 's/^v//')" >> "$GITHUB_OUTPUT"
+          echo "opencode=$(gh api repos/anomalyco/opencode/releases/latest --jq .tag_name | sed 's/^v//')" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for code-server image tag on GHCR
+        env:
+          CS: ${{ steps.latest.outputs.code_server }}
+        run: |
+          for i in $(seq 1 30); do
+            if docker manifest inspect "ghcr.io/coder/code-server:${CS}" >/dev/null 2>&1; then
+              echo "image tag ${CS} available"
+              exit 0
+            fi
+            sleep 60
+          done
+          echo "ghcr.io/coder/code-server:${CS} not available after 30 minutes" >&2
+          exit 1
+
+      - name: Read pinned versions
+        id: versions
+        run: |
+          echo "code_server=$(sed -n 's/^CODE_SERVER_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
+          echo "opencode=$(sed -n 's/^OPENCODE_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
+
+      - name: Bump pins and push
+        id: bump
+        env:
+          CS_NEW: ${{ steps.latest.outputs.code_server }}
+          OC_NEW: ${{ steps.latest.outputs.opencode }}
+        run: |
+          CHANGED=false
+          if [ "${{ steps.versions.outputs.code_server }}" != "${CS_NEW}" ]; then
+            sed -i "s/^CODE_SERVER_VERSION=.*/CODE_SERVER_VERSION=${CS_NEW}/" versions.env
+            CHANGED=true
+          fi
+          if [ "${{ steps.versions.outputs.opencode }}" != "${OC_NEW}" ]; then
+            sed -i "s/^OPENCODE_VERSION=.*/OPENCODE_VERSION=${OC_NEW}/" versions.env
+            CHANGED=true
+          fi
+          echo "changed=${CHANGED}" >> "$GITHUB_OUTPUT"
+          if [ "${CHANGED}" = "true" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add versions.env
+            git commit -m "chore: bump code-server ${CS_NEW}, opencode ${OC_NEW}"
+            git push
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read pinned versions
+        id: versions
+        run: |
+          echo "code_server=$(sed -n 's/^CODE_SERVER_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
+          echo "opencode=$(sed -n 's/^OPENCODE_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            CODE_SERVER_VERSION=${{ steps.versions.outputs.code_server }}
+            OPENCODE_VERSION=${{ steps.versions.outputs.opencode }}
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:code-server-${{ steps.versions.outputs.code_server }}
+            ghcr.io/${{ github.repository }}:opencode-${{ steps.versions.outputs.opencode }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
