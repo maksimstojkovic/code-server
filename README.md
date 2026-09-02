@@ -55,9 +55,20 @@ The image is rebuilt automatically within ~6 hours of a new code-server or openc
 1. Open code-server over HTTPS → terminal → `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 | base64)"` → paste somewhere (`Ctrl+V`) → should paste `hello-osc52`
 2. Run `opencode` → drag-select some text → expect the "Copied to clipboard" toast to actually mean it this time → paste in a browser text field
 
+## Configuration
+
+Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compose picks it up automatically:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server (set via the image's `fixuid`). Changing it after data exists triggers a **one-time recursive chown** of the home mount on the next start |
+| `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on start (created automatically if missing) |
+| `TZ` | `Australia/Sydney` | Container timezone |
+| `DOCKER_USER` | `coder` | Optional cosmetic username inside the container (shell prompt, sudo) |
+
 ## Notes
 
-- The LinuxServer-style `/config` home directory carries over 1:1 (`/media/data/docker/opencode/config` is mounted at `/home/coder`); the coder image's `fixuid` keeps ownership mapped to UID/GID 1000
-- `PUID`/`PGID` env vars are not used by the coder image (fixuid replaces them); `TZ` still applies
+- The LinuxServer-style `/config` home directory carries over 1:1 (`/media/data/docker/opencode/config` is mounted at `/home/coder`)
+- Startup hooks live in the image at `/usr/local/share/entrypoint.d` (the base image's hook location under `$HOME` would be shadowed by the volume mount)
 - SWAG: use the bundled `code-server` proxy conf (it enables websockets) pointed at this container's port 8080
 - Python is externally managed (PEP 668): use `python3 -m venv` or `pipx` rather than global `pip install`
