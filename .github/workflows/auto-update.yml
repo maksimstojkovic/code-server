@@ -19,7 +19,7 @@ jobs:
     outputs:
       changed: ${{ steps.bump.outputs.changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Fetch latest release versions
         id: latest
@@ -86,15 +86,15 @@ jobs:
           echo "code_server=$(sed -n 's/^CODE_SERVER_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
           echo "opencode=$(sed -n 's/^OPENCODE_VERSION=//p' versions.env)" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
