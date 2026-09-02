@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG CODE_SERVER_VERSION
+# Default only silences the InvalidDefaultArgInFrom lint; CI always passes
+# the real pin from versions.env (single source of truth).
+ARG CODE_SERVER_VERSION=4.135.0
 FROM ghcr.io/coder/code-server:${CODE_SERVER_VERSION}
 
 ARG OPENCODE_VERSION
