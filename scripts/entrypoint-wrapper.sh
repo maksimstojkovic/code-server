@@ -17,6 +17,15 @@ set -eu
 PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 BIND_ADDR="${BIND_ADDR:-0.0.0.0:8080}"
+AUTH="${AUTH:-password}"
+
+case "${AUTH}" in
+    password|none) ;;
+    *)
+        echo "entrypoint-wrapper: invalid AUTH '${AUTH}' (supported: password, none)" >&2
+        exit 1
+        ;;
+esac
 
 # Docker derives HOME from the container user in /etc/passwd; when started as
 # root it stays /root, so pin the coder user's real home before any exec.
@@ -46,7 +55,7 @@ if [ "$(id -u)" = "0" ]; then
     fi
 
     exec setpriv --reuid="$(id -u coder)" --regid="$(id -g coder)" --init-groups \
-        /usr/bin/entrypoint.sh --bind-addr "${BIND_ADDR}" /home/coder
+        /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" /home/coder
 fi
 
-exec /usr/bin/entrypoint.sh --bind-addr "${BIND_ADDR}" /home/coder
+exec /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" /home/coder

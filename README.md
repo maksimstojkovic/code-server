@@ -57,11 +57,21 @@ The image is rebuilt automatically within ~6 hours of a new code-server or openc
 
 ## Configuration
 
+**Login password:** code-server has no fixed default — it generates a random password on first start and writes it to `config.yaml`. On the host (volume-mounted) that is:
+
+```bash
+cat /media/data/docker/opencode/config/.config/code-server/config.yaml   # password: <generated>
+```
+
+To set your own, edit the `password:` field in that file and restart the container (it persists in the volume). Behind SWAG you can alternatively keep code-server's auth or point SWAG's auth middleware at it.
+
 Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compose picks it up automatically:
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server. Changing them after data exists applies a **one-time recursive chown** of the home mount on the next start. `PUID=0` (root) is not supported |
+| `AUTH` | `password` | `password` = code-server's login screen; `none` = **no login screen, immediate use** — only when something in front of code-server already handles authentication (e.g. SWAG + Authelia/basic auth) |
+| `PASSWORD` | *(unset)* | Plain login password; overrides the auto-generated one in `config.yaml` |
 | `TZ` | `Australia/Sydney` | Container timezone |
 | `DOCKER_USER` | `coder` | Optional cosmetic username inside the container (shell prompt, sudo) |
 

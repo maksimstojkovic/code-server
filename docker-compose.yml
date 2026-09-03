@@ -7,6 +7,8 @@ services:
       - PGID=${PGID:-1000}
       - TZ=${TZ:-Australia/Sydney}
       - DOCKER_USER=${DOCKER_USER:-coder}
+      - AUTH=${AUTH:-password}
+      - PASSWORD=${PASSWORD:-}
     volumes:
       - /media/data/docker/opencode/config:/home/coder
     ports:
