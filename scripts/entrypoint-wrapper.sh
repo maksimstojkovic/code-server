@@ -18,6 +18,12 @@ PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 BIND_ADDR="${BIND_ADDR:-0.0.0.0:8080}"
 
+# Docker derives HOME from the container user in /etc/passwd; when started as
+# root it stays /root, so pin the coder user's real home before any exec.
+export HOME=/home/coder
+export USER=coder
+export LOGNAME=coder
+
 if [ "$(id -u)" = "0" ]; then
     if [ "${PUID}" = "0" ]; then
         echo "entrypoint-wrapper: PUID=0 (root) is not supported" >&2
