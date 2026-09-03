@@ -55,6 +55,20 @@ The image is rebuilt automatically within ~6 hours of a new code-server or openc
 1. Open code-server over HTTPS → terminal → `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 | base64)"` → paste somewhere (`Ctrl+V`) → should paste `hello-osc52`
 2. Run `opencode` → drag-select some text → expect the "Copied to clipboard" toast to actually mean it this time → paste in a browser text field
 
+### Troubleshooting select-to-copy
+
+Work through this list top to bottom; the first failing step identifies the broken layer:
+
+| Step | How | Failure means |
+|---|---|---|
+| Secure context | In DevTools console: `window.isSecureContext` → must be `true` | You are on plain HTTP (LAN IP). Browser clipboard API is blocked — serve code-server via HTTPS (SWAG) or localhost |
+| Clipboard API present | DevTools console: `typeof navigator.clipboard` → `"object"` | Insecure/older browser — update or switch browser |
+| Programmatic write works | DevTools console: `navigator.clipboard.writeText('manual-test')` then `Ctrl+V` elsewhere | If this fails: browser permission/policy issue (check the site's clipboard permission, try Chrome/Edge). If it works but OSC 52 still fails, the write is being rejected for missing user activation — use the native path below |
+| Terminal OSC 52 (no opencode) | `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 \| base64)"` then paste | If manual write works but this doesn't: open DevTools console — a rejection from `BrowserClipboardService` is logged there. Report the error |
+| opencode drag-select | Drag text in the TUI → look for the "Copied to clipboard" toast | No toast = the TUI selection never triggered a copy (opencode-side). Toast but no paste = browser-side write rejection |
+
+**Guaranteed native fallback (always available):** hold `Shift` while dragging to force a native browser selection — with `copyOnSelection` enabled (default in this image) the text is copied the moment you release the mouse, bypassing the app's clipboard chain entirely. TUI mouse features (scrolling, clicking) still work normally without Shift.
+
 ## Configuration
 
 **Login password:** code-server has no fixed default — it generates a random password on first start and writes it to `config.yaml`. On the host (volume-mounted) that is:

@@ -20,6 +20,9 @@ defaults = {
     "workbench.startupEditor": "none",
     # No Copilot CLI nudges, no agent side panel on the right
     "chat.disableAIFeatures": True,
+    # Selecting text in the terminal copies it immediately (native path,
+    # independent of the OSC 52 route apps like opencode use)
+    "terminal.integrated.copyOnSelection": True,
 }
 try:
     with open(path) as f:
