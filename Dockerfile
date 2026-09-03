@@ -43,11 +43,13 @@ RUN BUNDLE="$(find /usr/lib/code-server -type f -name 'workbench.web.main.intern
 RUN mkdir -p /usr/local/share/entrypoint.d
 ENV ENTRYPOINTD=/usr/local/share/entrypoint.d
 
-# Wrapper entrypoint: enables PUID/PGID/DEFAULT_WORKSPACE as plain environment
-# variables (the stock entrypoint hard-codes "." as the workspace and relies
-# on docker "user:" for the runtime UID).
+# Wrapper entrypoint: enables PUID/PGID as plain environment variables.
+# Must start as root so the wrapper can remap the built-in "coder" user and
+# fix home-mount ownership; it then drops privileges via setpriv before the
+# stock entrypoint runs. (The base image sets User=1000, which would skip the
+# remap entirely and break write access to the mounted home.)
 COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
 RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint-wrapper.sh"]
 
-USER 1000
+USER root
