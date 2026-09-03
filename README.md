@@ -61,14 +61,16 @@ Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compos
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server (set via the image's `fixuid`). Changing it after data exists triggers a **one-time recursive chown** of the home mount on the next start |
-| `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on start (created automatically if missing) |
+| `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server. Changing them after data exists applies a **one-time recursive chown** of the home mount on the next start. `PUID=0` (root) is not supported |
 | `TZ` | `Australia/Sydney` | Container timezone |
 | `DOCKER_USER` | `coder` | Optional cosmetic username inside the container (shell prompt, sudo) |
+
+The workspace is always `/home/coder` — the same home folder the stock coder image opens; no override is offered.
 
 ## Notes
 
 - The LinuxServer-style `/config` home directory carries over 1:1 (`/media/data/docker/opencode/config` is mounted at `/home/coder`)
-- Startup hooks live in the image at `/usr/local/share/entrypoint.d` (the base image's hook location under `$HOME` would be shadowed by the volume mount)
+- The wrapper entrypoint starts as root to remap the built-in `coder` user to `PUID`/`PGID`, then drops privileges via `setpriv` and hands off to the stock coder entrypoint (fixuid, hooks, `DOCKER_USER` handling)
+- `/usr/local/share/entrypoint.d` in the image is an empty extension point for startup scripts (the base image's default location under `$HOME` would be shadowed by the volume mount)
 - SWAG: use the bundled `code-server` proxy conf (it enables websockets) pointed at this container's port 8080
 - Python is externally managed (PEP 668): use `python3 -m venv` or `pipx` rather than global `pip install`

@@ -36,11 +36,18 @@ RUN BUNDLE="$(find /usr/lib/code-server -type f -name 'workbench.web.main.intern
     && bash /tmp/osc52-web.sh "$BUNDLE" \
     && rm /tmp/osc52-web.sh
 
-# Startup hooks (runs after fixuid, before code-server). The base image's
-# default ENTRYPOINTD location is under $HOME, which is shadowed by the
-# mounted volume, so it is moved to /usr/local/share/entrypoint.d.
-COPY scripts/entrypointd/ /usr/local/share/entrypoint.d/
-RUN chmod +x /usr/local/share/entrypoint.d/*
+# Startup hooks directory (runs after fixuid, before code-server). The base
+# image's default ENTRYPOINTD location is under $HOME, which is shadowed by
+# the mounted volume, so it is moved to /usr/local/share/entrypoint.d.
+# Kept as an extension point; empty by default.
+RUN mkdir -p /usr/local/share/entrypoint.d
 ENV ENTRYPOINTD=/usr/local/share/entrypoint.d
+
+# Wrapper entrypoint: enables PUID/PGID/DEFAULT_WORKSPACE as plain environment
+# variables (the stock entrypoint hard-codes "." as the workspace and relies
+# on docker "user:" for the runtime UID).
+COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
+RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint-wrapper.sh"]
 
 USER 1000
