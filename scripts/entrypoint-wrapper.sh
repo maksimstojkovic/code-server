@@ -11,12 +11,14 @@
 #    handling and launches code-server).
 # 2. When started as a non-root user, just hand off unchanged.
 #
-# The workspace is always /home/coder, matching the stock image.
+# The default workspace is /home/coder/workspace (configurable via
+# DEFAULT_WORKSPACE); it is created if missing.
 set -eu
 
 PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 BIND_ADDR="${BIND_ADDR:-0.0.0.0:8080}"
+DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/home/coder/workspace}"
 AUTH="${AUTH:-password}"
 
 case "${AUTH}" in
@@ -54,8 +56,11 @@ if [ "$(id -u)" = "0" ]; then
         chown -R "$(id -u coder):$(id -g coder)" /home/coder
     fi
 
+    mkdir -p "${DEFAULT_WORKSPACE}"
+    chown "$(id -u coder):$(id -g coder)" "${DEFAULT_WORKSPACE}" 2>/dev/null || true
+
     exec setpriv --reuid="$(id -u coder)" --regid="$(id -g coder)" --init-groups \
-        /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" /home/coder
+        /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" "${DEFAULT_WORKSPACE}"
 fi
 
-exec /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" /home/coder
+exec /usr/bin/entrypoint.sh --auth "${AUTH}" --bind-addr "${BIND_ADDR}" "${DEFAULT_WORKSPACE}"

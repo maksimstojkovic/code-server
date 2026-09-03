@@ -1,0 +1,44 @@
+#!/bin/sh
+# Seeds default VS Code settings on first run. Existing user-set keys are
+# never overridden; unparseable files are left untouched.
+set -eu
+
+SETTINGS_DIR="${HOME}/.local/share/code-server/User"
+SETTINGS="${SETTINGS_DIR}/settings.json"
+
+mkdir -p "${SETTINGS_DIR}"
+[ -f "${SETTINGS}" ] || printf '{}\n' > "${SETTINGS}"
+
+python3 - "$SETTINGS" <<'EOF'
+import json, os, sys, tempfile
+
+path = sys.argv[1]
+defaults = {
+    # Trust the workspace outright - no restricted mode, no trust prompt
+    "security.workspace.trust.enabled": False,
+    # No welcome/getting-started tab on startup
+    "workbench.startupEditor": "none",
+    # No Copilot CLI nudges, no agent side panel on the right
+    "chat.disableAIFeatures": True,
+}
+try:
+    with open(path) as f:
+        settings = json.load(f)
+except Exception as e:
+    print(f"default-settings: cannot parse {path} ({e}); leaving untouched")
+    raise SystemExit(0)
+
+changed = [k for k in defaults if k not in settings]
+if not changed:
+    raise SystemExit(0)
+
+for k, v in defaults.items():
+    settings.setdefault(k, v)
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path))
+with os.fdopen(fd, "w") as f:
+    json.dump(settings, f, indent=4)
+    f.write("\n")
+os.replace(tmp, path)
+print(f"default-settings: set {', '.join(changed)}")
+EOF

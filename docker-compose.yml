@@ -9,6 +9,7 @@ services:
       - DOCKER_USER=${DOCKER_USER:-coder}
       - AUTH=${AUTH:-password}
       - PASSWORD=${PASSWORD:-}
+      - DEFAULT_WORKSPACE=${DEFAULT_WORKSPACE:-/home/coder/workspace}
     volumes:
       - /media/data/docker/opencode/config:/home/coder
     ports:
