@@ -23,6 +23,9 @@ defaults = {
     # Selecting text in the terminal copies it immediately (native path,
     # independent of the OSC 52 route apps like opencode use)
     "terminal.integrated.copyOnSelection": True,
+    # Send Ctrl+letter shortcuts to the shell (nano Ctrl+K etc.) instead of
+    # the workbench intercepting them; Ctrl+Shift+C/V still copy/paste
+    "terminal.integrated.sendKeybindingsToShell": True,
 }
 try:
     with open(path) as f:
