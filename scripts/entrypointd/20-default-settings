@@ -26,6 +26,9 @@ defaults = {
     # Send Ctrl+letter shortcuts to the shell (nano Ctrl+K etc.) instead of
     # the workbench intercepting them; Ctrl+Shift+C/V still copy/paste
     "terminal.integrated.sendKeybindingsToShell": True,
+    # Ctrl+K (and other chords like Ctrl+X) are normally captured by the
+    # workbench as chord prefixes; disable that so they reach the shell
+    "terminal.integrated.allowChords": False,
 }
 try:
     with open(path) as f:
