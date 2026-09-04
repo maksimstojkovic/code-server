@@ -52,4 +52,10 @@ COPY scripts/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
 RUN chmod +x /usr/local/bin/entrypoint-wrapper.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint-wrapper.sh"]
 
+# Clipboard wrappers: xclip/xsel in the image route clipboard writes to
+# code-server's --stdin-to-clipboard channel so TUI apps (opencode) copy into
+# the real browser clipboard. Installed before any system copy of the tools.
+COPY scripts/clipboard-wrappers/ /usr/local/bin/
+RUN chmod +x /usr/local/bin/xclip /usr/local/bin/xsel
+
 USER root

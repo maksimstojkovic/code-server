@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# xclip wrapper for the code-server image.
+#
+# Routes clipboard WRITES to code-server's --stdin-to-clipboard channel, which
+# places the text on the browser's real clipboard. This is what makes
+# select-to-copy work for TUI apps (opencode etc.) in code-server's browser
+# terminal: they call `xclip -selection clipboard` and pipe text to stdin.
+#
+# Reads (-o / -output) are passed through to a real xclip when one is present;
+# headless there is none, so reads are a silent no-op (opencode never reads).
+set -eu
+
+for arg in "$@"; do
+    if [ "${arg}" = "-o" ] || [ "${arg}" = "-output" ]; then
+        exec /usr/bin/xclip "$@" 2>/dev/null || exit 0
+    fi
+done
+
+exec /usr/lib/code-server/lib/vscode/bin/remote-cli/code-server --stdin-to-clipboard 2>/dev/null \
+    || exec code-server --stdin-to-clipboard 2>/dev/null \
+    || exit 0

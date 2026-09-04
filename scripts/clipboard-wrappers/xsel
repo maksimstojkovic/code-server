@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# xsel wrapper for the code-server image. See xclip wrapper in this directory
+# for the rationale; opencode may fall back to `xsel --clipboard --input`.
+set -eu
+
+for arg in "$@"; do
+    if [ "${arg}" = "-o" ] || [ "${arg}" = "-output" ]; then
+        exec /usr/bin/xsel "$@" 2>/dev/null || exit 0
+    fi
+done
+
+exec /usr/lib/code-server/lib/vscode/bin/remote-cli/code-server --stdin-to-clipboard 2>/dev/null \
+    || exec code-server --stdin-to-clipboard 2>/dev/null \
+    || exit 0
