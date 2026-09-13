@@ -10,6 +10,7 @@ services:
       - AUTH=${AUTH:-none}
       - PASSWORD=${PASSWORD:-}
       - DEFAULT_WORKSPACE=${DEFAULT_WORKSPACE:-/home/coder/workspace}
+      - CODE_SERVER_PORT=${CODE_SERVER_PORT:-8080}
       - OPENCODE_WEB=${OPENCODE_WEB:-false}
       - OPENCODE_WEB_PORT=${OPENCODE_WEB_PORT:-4096}
       - OPENCODE_WEB_HOSTNAME=${OPENCODE_WEB_HOSTNAME:-0.0.0.0}
@@ -17,6 +18,6 @@ services:
     volumes:
       - /media/data/docker/opencode/config:/home/coder
     ports:
-      - "8080:8080"
-      - "${OPENCODE_WEB_PORT:-4000}:${OPENCODE_WEB_PORT:-4000}"
+      - "${CODE_SERVER_PORT:-8080}:${CODE_SERVER_PORT:-8080}"
+      - "${OPENCODE_WEB_PORT:-4096}:${OPENCODE_WEB_PORT:-4096}"
     restart: unless-stopped

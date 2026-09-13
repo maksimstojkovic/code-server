@@ -87,6 +87,7 @@ Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compos
 | `AUTH` | `none` | `none` = **no login screen, immediate use**; `password` = code-server's login screen (use only if code-server isn't fronted by another auth layer) |
 | `PASSWORD` | *(unset)* | Plain login password; overrides the auto-generated one in `config.yaml` |
 | `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on startup (created if missing) |
+| `CODE_SERVER_PORT` | `8080` | Port code-server listens on — inside the container and mapped to the host (same number both sides; update SWAG if changed) |
 | `OPENCODE_WEB` | `false` | Set to `true` to run the opencode web server (`opencode serve`) in the same container |
 | `OPENCODE_WEB_PORT` | `4096` | Port the opencode web server listens on (opencode's documented default; also the mapped host port) |
 | `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
