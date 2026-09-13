@@ -1,106 +1,74 @@
-# code-server + opencode (auto-updated)
+# code-server + opencode
 
-Docker image based on the [official coder/code-server image](https://github.com/coder/code-server) with:
+Docker image with [code-server](https://github.com/coder/code-server) and [opencode](https://opencode.ai) preinstalled, rebuilt automatically whenever either publishes a new release. The image is published to `ghcr.io/maksimstojkovic/code-server` for `linux/amd64` and `linux/arm64`.
 
-- **opencode** CLI installed and pinned (auto-bumped on new releases)
-- **vim**, **python3**, **pip**, **venv** preinstalled
-- A one-line **OSC 52 clipboard patch** that fixes select-to-copy in the opencode TUI (and any other OSC 52 TUI, e.g. tmux) when using code-server in the browser
+## Features
 
-A scheduled GitHub Actions workflow checks for new releases of code-server and opencode every 6 hours, bumps the pins in `versions.env`, and pushes a fresh image to `ghcr.io/maksimstojkovic/code-server`.
+- [opencode](https://opencode.ai) CLI installed and pinned
+- vim, python3, pip and venv preinstalled
+- Select-to-copy works in the browser terminal (see [Clipboard](#clipboard))
+- Terminal Ctrl+shortcuts reach the shell (nano, TUI apps), copy/paste via `Ctrl+Shift+C/V`
+- Workspace trust disabled, no welcome screen or AI UI
+- Optional opencode web server in the same container
 
-## Files
-
-| File | Purpose |
-|---|---|
-| `versions.env` | Pinned `CODE_SERVER_VERSION` and `OPENCODE_VERSION` (single source of truth) |
-| `Dockerfile` | Builds the image from the official coder base + pins |
-| `patches/osc52-web.sh` | The clipboard fix (guarded; build fails if upstream changes) |
-| `docker-compose.yml` | Deployment for the Docker host |
-| `.github/workflows/auto-update.yml` | Release checks, version bumps, image builds |
-
-## The clipboard fix
-
-**Symptom:** dragging to select text in the opencode TUI shows "Copied to clipboard" but nothing lands in the browser clipboard.
-
-**Root cause chain (verified against sources, September 2026):**
-
-1. opencode's TUI copies on mouse-up by emitting an **OSC 52** escape sequence (unconditional), then trying `xclip`/`xsel`/`wl-copy` — all silently failing headless. The toast displays regardless because failures are swallowed (`packages/tui/src/clipboard.ts`).
-2. code-server's terminal (xterm.js `ClipboardAddon`) receives OSC 52 and hands it to VS Code's clipboard service. This has worked since VS Code 1.91 (June 2024).
-3. **The break:** in the *web* clipboard service, `BrowserClipboardService.writeText` stores any write that passes a selection type in-memory only (`// With type: only in-memory is supported`), and the xterm addon provider always passes `"clipboard"`. So the write is silently discarded. Desktop VS Code uses a different service, which is why it works there.
-
-**Fix:** `patches/osc52-web.sh` rewrites the single minified provider call in `workbench.web.main.internal.js` so clipboard writes go untyped → `navigator.clipboard.writeText`. It runs during image build with a hard guard: if a future code-server release changes the minified code, the build **fails loudly** rather than shipping without the fix. If that happens, locate the `ClipboardAddon` provider mapping in the new bundle (compare with `src/vs/workbench/contrib/terminal/browser/xterm/xtermTerminal.ts` upstream) and update the pattern in the script.
-
-**Requirements:** the browser clipboard API needs a **secure context** — access code-server via HTTPS (e.g. SWAG) or localhost. Plain HTTP over LAN IP will not work.
-
-TUI mouse behavior is unchanged: opencode keeps mouse capture (scrolling, clicking) and its native select-to-copy just works. If something regresses, `Shift`+drag forces a native terminal selection as an emergency fallback.
-
-## Setup (one-time)
-
-1. Push this repo to `github.com/maksimstojkovic/code-server`
-2. Run the workflow once manually: **Actions → auto-update → Run workflow** (or just push)
-3. The first build creates a **private** GHCR package. Either:
-   - Make it public: repo → Packages → `code-server` → Package settings → Change visibility, **or**
-   - On the Docker host: `docker login ghcr.io -u maksimstojkovic` with a PAT that has `read:packages`
-
-## Deploy / update (Docker host)
+## Quick start
 
 ```bash
+git clone https://github.com/maksimstojkovic/code-server
+cd code-server
+cp .env.example .env   # adjust to taste
 docker compose pull && docker compose up -d
 ```
 
-The image is rebuilt automatically within ~6 hours of a new code-server or opencode release; just pull and recreate whenever you like.
-
-## Verify the clipboard fix
-
-1. Open code-server over HTTPS → terminal → `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 | base64)"` → paste somewhere (`Ctrl+V`) → should paste `hello-osc52`
-2. Run `opencode` → drag-select some text → expect the "Copied to clipboard" toast to actually mean it this time → paste in a browser text field
-
-### Troubleshooting select-to-copy
-
-Work through this list top to bottom; the first failing step identifies the broken layer:
-
-| Step | How | Failure means |
-|---|---|---|
-| Secure context | In DevTools console: `window.isSecureContext` → must be `true` | You are on plain HTTP (LAN IP). Browser clipboard API is blocked — serve code-server via HTTPS (SWAG) or localhost |
-| Clipboard API present | DevTools console: `typeof navigator.clipboard` → `"object"` | Insecure/older browser — update or switch browser |
-| Programmatic write works | DevTools console: `navigator.clipboard.writeText('manual-test')` then `Ctrl+V` elsewhere | If this fails: browser permission/policy issue (check the site's clipboard permission, try Chrome/Edge). If it works but OSC 52 still fails, the write is being rejected for missing user activation — use the native path below |
-| Terminal OSC 52 (no opencode) | `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 \| base64)"` then paste | If manual write works but this doesn't: open DevTools console — a rejection from `BrowserClipboardService` is logged there. Report the error |
-| opencode drag-select | Drag text in the TUI → look for the "Copied to clipboard" toast | No toast = the TUI selection never triggered a copy (opencode-side). Toast but no paste = browser-side write rejection |
-
-**Guaranteed native fallback (always available):** hold `Shift` while dragging to force a native browser selection — with `copyOnSelection` enabled (default in this image) the text is copied the moment you release the mouse, bypassing the app's clipboard chain entirely. TUI mouse features (scrolling, clicking) still work normally without Shift.
+Open `http://localhost:8080`. There is no login screen by default (`AUTH=none`); set `AUTH=password` and `PASSWORD` in `.env` if you want one.
 
 ## Configuration
 
-**Login password:** code-server has no fixed default — it generates a random password on first start and writes it to `config.yaml`. On the host (volume-mounted) that is:
+Copy `.env.example` to `.env` and adjust. All variables are optional.
+
+| Variable | Default | Description |
+|---|---|---|
+| `PUID` / `PGID` | `1000` / `1000` | Runtime user/group of code-server. Changing after data exists re-chowns the home mount on the next start. `PUID=0` is not supported |
+| `AUTH` | `none` | `none` — no login screen; `password` — code-server login screen |
+| `PASSWORD` | *(unset)* | Login password when `AUTH=password`; overrides the generated one in `config.yaml` |
+| `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on startup (created if missing) |
+| `CODE_SERVER_PORT` | `8080` | code-server port, inside the container and on the host |
+| `TZ` | `Australia/Sydney` | Container timezone |
+| `DOCKER_USER` | `coder` | Cosmetic username inside the container (shell prompt, sudo) |
+| `OPENCODE_WEB` | `false` | Set `true` to run the opencode web server (`opencode serve`) alongside code-server |
+| `OPENCODE_WEB_PORT` | `4096` | opencode web server port, inside the container and on the host |
+| `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
+| `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (recommended; unsecured without it) |
+
+Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
+
+## Updates
+
+A GitHub Actions workflow checks for new code-server and opencode releases every 6 hours. When either changes, it bumps the pins in `versions.env`, rebuilds the image and pushes it to GHCR. To apply:
 
 ```bash
-cat /media/data/docker/opencode/config/.config/code-server/config.yaml   # password: <generated>
+git pull && docker compose pull && docker compose up -d
 ```
 
-To set your own, edit the `password:` field in that file and restart the container (it persists in the volume). Behind SWAG you can alternatively keep code-server's auth or point SWAG's auth middleware at it.
+## Networking
 
-Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compose picks it up automatically:
+- code-server listens on `0.0.0.0:8080` (see `CODE_SERVER_PORT`), with password auth off by default — keep it behind a reverse proxy or VPN.
+- Behind [SWAG](https://docs.linuxserver.io/general/swag/), use the bundled `code-server` proxy conf (it enables websockets) and point it at this container.
+- When `OPENCODE_WEB=true`, the opencode web server is available on port `4096`.
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server. Changing them after data exists applies a **one-time recursive chown** of the home mount on the next start. `PUID=0` (root) is not supported |
-| `AUTH` | `none` | `none` = **no login screen, immediate use**; `password` = code-server's login screen (use only if code-server isn't fronted by another auth layer) |
-| `PASSWORD` | *(unset)* | Plain login password; overrides the auto-generated one in `config.yaml` |
-| `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on startup (created if missing) |
-| `CODE_SERVER_PORT` | `8080` | Port code-server listens on — inside the container and mapped to the host (same number both sides; update SWAG if changed) |
-| `OPENCODE_WEB` | `false` | Set to `true` to run the opencode web server (`opencode serve`) in the same container |
-| `OPENCODE_WEB_PORT` | `4096` | Port the opencode web server listens on (opencode's documented default; also the mapped host port) |
-| `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
-| `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (it is unsecured without one) |
-| `TZ` | `Australia/Sydney` | Container timezone |
-| `DOCKER_USER` | `coder` | Optional cosmetic username inside the container (shell prompt, sudo) |
+## Clipboard
 
-The workspace is always `/home/coder` — the same home folder the stock coder image opens; no override is offered.
+Select-to-copy in the opencode TUI works via `xclip`/`xsel` wrappers that forward clipboard writes to code-server's `--stdin-to-clipboard` channel, landing text on the browser's real clipboard. Requires HTTPS or localhost (browsers block the clipboard API over plain HTTP on a LAN).
 
-## Notes
+If copy stops working, verify with `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 | base64)"` in a terminal and paste elsewhere. As a fallback, hold `Shift` while dragging to make a native selection (copies on release).
 
-- The LinuxServer-style `/config` home directory carries over 1:1 (`/media/data/docker/opencode/config` is mounted at `/home/coder`)
-- The wrapper entrypoint starts as root to remap the built-in `coder` user to `PUID`/`PGID`, then drops privileges via `setpriv` and hands off to the stock coder entrypoint (fixuid, hooks, `DOCKER_USER` handling)
-- `/usr/local/share/entrypoint.d` in the image holds startup hooks (the base image's default location under `$HOME` would be shadowed by the volume mount). The bundled hook seeds default settings on first run — workspace trust disabled, no welcome tab, no Copilot/AI UI (terminal nudges, agent side panel) — and never overrides keys you set yourself in `settings.json`
-- SWAG: use the bundled `code-server` proxy conf (it enables websockets) pointed at this container's port 8080
-- Python is externally managed (PEP 668): use `python3 -m venv` or `pipx` rather than global `pip install`
+## Repository layout
+
+| Path | Purpose |
+|---|---|
+| `versions.env` | Pinned `CODE_SERVER_VERSION` / `OPENCODE_VERSION` (single source of truth) |
+| `Dockerfile` | Image build |
+| `docker-compose.yml` | Deployment |
+| `patches/osc52-web.sh` | Clipboard fix applied at build time (guarded; build fails if the bundle changes) |
+| `scripts/` | Entrypoint wrapper, startup hooks, clipboard wrappers |
+| `.github/workflows/auto-update.yml` | Release checks, version bumps, image builds |
