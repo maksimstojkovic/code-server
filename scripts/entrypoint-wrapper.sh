@@ -19,7 +19,7 @@ PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 BIND_ADDR="${BIND_ADDR:-0.0.0.0:8080}"
 DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/home/coder/workspace}"
-AUTH="${AUTH:-password}"
+AUTH="${AUTH:-none}"
 
 case "${AUTH}" in
     password|none) ;;

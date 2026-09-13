@@ -84,7 +84,7 @@ Copy `.env.example` to `.env` next to `docker-compose.yml` and adjust — compos
 | Variable | Default | Purpose |
 |---|---|---|
 | `PUID` / `PGID` | `1000` / `1000` | Runtime UID/GID of code-server. Changing them after data exists applies a **one-time recursive chown** of the home mount on the next start. `PUID=0` (root) is not supported |
-| `AUTH` | `password` | `password` = code-server's login screen; `none` = **no login screen, immediate use** — only when something in front of code-server already handles authentication (e.g. SWAG + Authelia/basic auth) |
+| `AUTH` | `none` | `none` = **no login screen, immediate use**; `password` = code-server's login screen (use only if code-server isn't fronted by another auth layer) |
 | `PASSWORD` | *(unset)* | Plain login password; overrides the auto-generated one in `config.yaml` |
 | `DEFAULT_WORKSPACE` | `/home/coder/workspace` | Folder code-server opens on startup (created if missing) |
 | `OPENCODE_WEB` | `0` | Set to `1` to run the opencode web server (`opencode serve`) in the same container |
