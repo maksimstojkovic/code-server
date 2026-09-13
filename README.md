@@ -6,7 +6,7 @@ Docker image with [code-server](https://github.com/coder/code-server) and [openc
 
 - [opencode](https://opencode.ai) CLI installed and pinned
 - vim, python3, pip and venv preinstalled
-- Select-to-copy works in the browser terminal (see [Clipboard](#clipboard))
+- Select-to-copy works in the browser terminal
 - Terminal Ctrl+shortcuts reach the shell (nano, TUI apps), copy/paste via `Ctrl+Shift+C/V`
 - Workspace trust disabled, no welcome screen or AI UI
 - Optional opencode web server in the same container
@@ -55,12 +55,6 @@ git pull && docker compose pull && docker compose up -d
 - code-server listens on `0.0.0.0:8080` (see `CODE_SERVER_PORT`), with password auth off by default — keep it behind a reverse proxy or VPN.
 - Behind [SWAG](https://docs.linuxserver.io/general/swag/), use the bundled `code-server` proxy conf (it enables websockets) and point it at this container.
 - When `OPENCODE_WEB=true`, the opencode web server is available on port `4096`.
-
-## Clipboard
-
-Select-to-copy in the opencode TUI works via `xclip`/`xsel` wrappers that forward clipboard writes to code-server's `--stdin-to-clipboard` channel, landing text on the browser's real clipboard. Requires HTTPS or localhost (browsers block the clipboard API over plain HTTP on a LAN).
-
-If copy stops working, verify with `printf '\033]52;c;%s\033\\' "$(printf hello-osc52 | base64)"` in a terminal and paste elsewhere. As a fallback, hold `Shift` while dragging to make a native selection (copies on release).
 
 ## Repository layout
 
