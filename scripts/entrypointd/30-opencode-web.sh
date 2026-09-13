@@ -9,7 +9,7 @@ case "${OPENCODE_WEB:-}" in
     *) exit 0 ;;
 esac
 
-PORT="${OPENCODE_WEB_PORT:-4000}"
+PORT="${OPENCODE_WEB_PORT:-4096}"
 HOSTNAME="${OPENCODE_WEB_HOSTNAME:-0.0.0.0}"
 WORKDIR="${DEFAULT_WORKSPACE:-/home/coder/workspace}"
 LOG="${OPENCODE_WEB_LOG:-/home/coder/opencode-web.log}"
