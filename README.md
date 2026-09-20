@@ -39,6 +39,8 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_WEB_PORT` | `4096` | opencode web server port, inside the container and on the host |
 | `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
 | `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (recommended; unsecured without it) |
+| `OPENROUTER_API_KEY` | *(unset)* | OpenRouter API key; opencode reads it automatically (no manual `/connect` setup) |
+| `OPENCODE_MODEL` | *(unset)* | Default model (full ID, e.g. `openrouter/anthropic/claude-sonnet-4.5`); avoids `/models` setup on first run |
 
 Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
 
