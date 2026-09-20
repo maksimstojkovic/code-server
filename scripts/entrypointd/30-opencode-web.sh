@@ -14,12 +14,19 @@ HOSTNAME="${OPENCODE_WEB_HOSTNAME:-0.0.0.0}"
 WORKDIR="${DEFAULT_WORKSPACE:-/home/coder/workspace}"
 LOG="${OPENCODE_WEB_LOG:-/home/coder/opencode-web.log}"
 
+# The real binary path, bypassing the /usr/local/bin/opencode wrapper (which
+# would otherwise wait/probe for this very server before starting it).
+OPCODE_BIN="${OPCODE_REAL_BIN:-/usr/local/lib/opencode/opencode}"
+if [ ! -x "${OPCODE_BIN}" ]; then
+    OPCODE_BIN="$(command -v opencode)"
+fi
+
 echo "opencode-web: starting 'opencode serve' on ${HOSTNAME}:${PORT} (workdir ${WORKDIR})"
 mkdir -p "${WORKDIR}"
 cd "${WORKDIR}"
 
 # Detach so it survives this hook and code-server becoming the main process.
-setsid nohup opencode serve \
+setsid nohup "${OPCODE_BIN}" serve \
     --hostname "${HOSTNAME}" \
     --port "${PORT}" \
     --print-logs \

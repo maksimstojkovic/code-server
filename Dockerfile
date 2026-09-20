@@ -19,12 +19,20 @@ RUN apt-get update \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install the pinned opencode release
+# Install the pinned opencode release (kept at a fixed path so the wrapper
+# below can invoke the real binary).
 RUN HOME=/usr/local/share/opencode-install \
     curl -fsSL https://opencode.ai/install | HOME=/usr/local/share/opencode-install bash -s -- --version "${OPENCODE_VERSION}" \
-    && cp /usr/local/share/opencode-install/.opencode/bin/opencode /usr/local/bin/opencode \
-    && chmod +x /usr/local/bin/opencode \
-    && opencode --version | grep -q "${OPENCODE_VERSION}"
+    && mkdir -p /usr/local/lib/opencode \
+    && cp /usr/local/share/opencode-install/.opencode/bin/opencode /usr/local/lib/opencode/opencode \
+    && chmod +x /usr/local/lib/opencode/opencode \
+    && /usr/local/lib/opencode/opencode --version | grep -q "${OPENCODE_VERSION}"
+
+# opencode wrapper: when OPENCODE_WEB is enabled, `opencode` in the terminal
+# attaches to the container's opencode web server so TUI and web interface
+# share sessions and state; otherwise it behaves like the real binary.
+COPY scripts/opencode-wrapper.sh /usr/local/bin/opencode
+RUN chmod +x /usr/local/bin/opencode
 
 # OSC 52 clipboard fix: makes terminal clipboard writes (opencode drag-select
 # copy, tmux, etc.) reach the real browser clipboard in code-server's web
