@@ -40,7 +40,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
 | `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (recommended; unsecured without it) |
 | `OPENROUTER_API_KEY` | *(unset)* | OpenRouter API key; opencode reads it automatically (no manual `/connect` setup) |
-| `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3` | Default model; avoids `/models` setup on first run (doesn't override a model set in the config) |
+| `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; avoids `/models` setup on first run (doesn't override a model set in the config) |
 
 Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
 
