@@ -42,6 +42,8 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENROUTER_API_KEY` | *(unset)* | OpenRouter API key; opencode reads it automatically (no manual `/connect` setup) |
 | `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; avoids `/models` setup on first run (doesn't override a model set in the config) |
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
+| `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |
+| `TAVILY_MCP_URL` | `https://mcp.tavily.com/mcp` | Tavily MCP server URL |
 
 Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
 

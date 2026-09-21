@@ -2,6 +2,7 @@
 # Seeds opencode defaults on first run (never overrides user-set values):
 #  - a default model from OPENCODE_MODEL
 #  - zero-data-retention on the OpenRouter provider (OPENCODE_ZDR, default on)
+#  - Tavily MCP server when TAVILY_API_KEY is set
 set -eu
 
 MODEL="${OPENCODE_MODEL:-}"
@@ -9,8 +10,10 @@ case "${OPENCODE_ZDR:-}" in
     false|0|no|FALSE|No|False) ZDR=0 ;;
     *) ZDR=1 ;;
 esac
+TAVILY_KEY="${TAVILY_API_KEY:-}"
+TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
 
-if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ]; then
+if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ]; then
     exit 0
 fi
 
@@ -20,10 +23,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${MODEL}" "${ZDR}" <<'EOF'
+python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" <<'EOF'
 import json, os, sys, tempfile
 
-path, model, zdr = sys.argv[1], sys.argv[2], sys.argv[3]
+path, model, zdr, tavily_key, tavily_url = sys.argv[1:6]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -43,6 +46,15 @@ if zdr == "1":
     if "zdr" not in prov:
         prov["zdr"] = True
         changed.append("openrouter ZDR")
+
+if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
+    cfg["mcp"]["tavily"] = {
+        "type": "remote",
+        "url": tavily_url,
+        "enabled": True,
+        "headers": {"Authorization": "Bearer {env:TAVILY_API_KEY}"},
+    }
+    changed.append("tavily mcp")
 
 if not changed:
     raise SystemExit(0)
