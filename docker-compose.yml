@@ -17,6 +17,7 @@ services:
       - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENCODE_MODEL=${OPENCODE_MODEL:-openrouter/z-ai/glm-5.3-flash}
+      - OPENCODE_ZDR=${OPENCODE_ZDR:-true}
     volumes:
       - /media/data/docker/opencode/config:/home/coder
     ports:
