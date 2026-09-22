@@ -40,6 +40,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
 | `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (recommended; unsecured without it) |
 | `OPENROUTER_API_KEY` | *(unset)* | OpenRouter API key; opencode reads it automatically (no manual `/connect` setup) |
+| `OPENROUTER_BASE_URL` | *(unset)* | Override the OpenRouter endpoint (e.g. a self-hosted "9router" gateway, OpenAI-compatible `/api/v1` base URL). Unset = `api.openrouter.ai` |
 | `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; avoids `/models` setup on first run (doesn't override a model set in the config) |
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
 | `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |

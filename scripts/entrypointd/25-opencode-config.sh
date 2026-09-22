@@ -2,6 +2,8 @@
 # Seeds opencode defaults on first run (never overrides user-set values):
 #  - a default model from OPENCODE_MODEL
 #  - zero-data-retention on the OpenRouter provider (OPENCODE_ZDR, default on)
+#  - a custom OpenRouter base URL from OPENROUTER_BASE_URL (e.g. a self-hosted
+#    "9router" gateway instead of api.openrouter.ai)
 #  - Tavily MCP server when TAVILY_API_KEY is set
 set -eu
 
@@ -12,8 +14,9 @@ case "${OPENCODE_ZDR:-}" in
 esac
 TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
+BASE_URL="${OPENROUTER_BASE_URL:-}"
 
-if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ]; then
+if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${BASE_URL}" ]; then
     exit 0
 fi
 
@@ -23,10 +26,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" <<'EOF'
+python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${BASE_URL}" <<'EOF'
 import json, os, sys, tempfile
 
-path, model, zdr, tavily_key, tavily_url = sys.argv[1:6]
+path, model, zdr, tavily_key, tavily_url, base_url = sys.argv[1:7]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -47,6 +50,12 @@ if zdr == "1":
         prov["zdr"] = True
         changed.append("openrouter ZDR")
 
+if base_url:
+    settings = cfg.setdefault("provider", {}).setdefault("openrouter", {}).setdefault("settings", {})
+    if "baseURL" not in settings:
+        settings["baseURL"] = base_url
+        changed.append("openrouter baseURL")
+
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     cfg["mcp"]["tavily"] = {
         "type": "remote",
@@ -66,3 +75,4 @@ with os.fdopen(fd, "w") as f:
 os.replace(tmp, path)
 print("opencode-config: " + ", ".join(changed))
 EOF
+
