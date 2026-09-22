@@ -2,8 +2,7 @@
 # Seeds opencode defaults on first run (never overrides user-set values):
 #  - a default model from OPENCODE_MODEL
 #  - zero-data-retention on the OpenRouter provider (OPENCODE_ZDR, default on)
-#  - a custom OpenRouter base URL from OPENROUTER_BASE_URL (e.g. a self-hosted
-#    "9router" gateway instead of api.openrouter.ai)
+#  - 9Router (self-hosted OpenAI-compatible gateway) when N9ROUTER_BASE_URL set
 #  - Tavily MCP server when TAVILY_API_KEY is set
 set -eu
 
@@ -14,9 +13,10 @@ case "${OPENCODE_ZDR:-}" in
 esac
 TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
-BASE_URL="${OPENROUTER_BASE_URL:-}"
+N9_BASE="${N9ROUTER_BASE_URL:-}"
+N9_MODEL="${N9ROUTER_MODEL:-}"
 
-if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${BASE_URL}" ]; then
+if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ]; then
     exit 0
 fi
 
@@ -26,10 +26,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${BASE_URL}" <<'EOF'
+python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" <<'EOF'
 import json, os, sys, tempfile
 
-path, model, zdr, tavily_key, tavily_url, base_url = sys.argv[1:7]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model = sys.argv[1:8]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -50,11 +50,19 @@ if zdr == "1":
         prov["zdr"] = True
         changed.append("openrouter ZDR")
 
-if base_url:
-    settings = cfg.setdefault("provider", {}).setdefault("openrouter", {}).setdefault("settings", {})
-    if "baseURL" not in settings:
-        settings["baseURL"] = base_url
-        changed.append("openrouter baseURL")
+if n9_base and "9router" not in cfg.setdefault("provider", {}):
+    entry = {
+        "npm": "@ai-sdk/openai-compatible",
+        "name": "9Router",
+        "options": {
+            "baseURL": n9_base,
+            "apiKey": "{env:N9ROUTER_API_KEY}",
+        },
+    }
+    if n9_model:
+        entry["models"] = {n9_model: {"name": n9_model}}
+    cfg["provider"]["9router"] = entry
+    changed.append("9router provider")
 
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     cfg["mcp"]["tavily"] = {
