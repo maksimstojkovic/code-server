@@ -6,17 +6,24 @@
 #  - Tavily MCP server when TAVILY_API_KEY is set
 set -eu
 
-MODEL="${OPENCODE_MODEL:-}"
+N9_BASE="${N9ROUTER_BASE_URL:-}"
+N9_MODEL="${N9ROUTER_MODEL:-}"
+
+# Default model resolution: a 9Router model takes precedence when 9Router is
+# enabled and N9ROUTER_MODEL is set (so it becomes the web server's default);
+# otherwise OPENCODE_MODEL is used. Applied on every start.
+DEFAULT_MODEL="${OPENCODE_MODEL:-}"
+if [ -n "${N9_BASE}" ] && [ -n "${N9_MODEL}" ]; then
+    DEFAULT_MODEL="9router/${N9_MODEL}"
+fi
 case "${OPENCODE_ZDR:-}" in
     false|0|no|FALSE|No|False) ZDR=0 ;;
     *) ZDR=1 ;;
 esac
 TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
-N9_BASE="${N9ROUTER_BASE_URL:-}"
-N9_MODEL="${N9ROUTER_MODEL:-}"
 
-if [ -z "${MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ]; then
     exit 0
 fi
 
@@ -26,7 +33,7 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" <<'EOF'
 import json, os, sys, tempfile
 
 path, model, zdr, tavily_key, tavily_url, n9_base, n9_model = sys.argv[1:8]
