@@ -44,7 +44,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
 | `N9ROUTER_BASE_URL` | *(unset)* | Enables [9Router](https://github.com/nightwalker89/n9router) as an OpenAI-compatible opencode provider (base URL incl. `/v1`, e.g. `http://host:20128/v1`) |
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |
-| `N9ROUTER_MODEL` | *(unset)* | A 9Router model ID to expose (e.g. `glm/glm-5.3-flash`). To make it the default, set `OPENCODE_MODEL=9router/<model>` |
+| `N9ROUTER_MODEL` | `openrouter/glm-5.3-flash` | The 9Router model ID exposed by default. To make it the default overall, set `OPENCODE_MODEL=9router/<model>` |
 | `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |
 | `TAVILY_MCP_URL` | `https://mcp.tavily.com/mcp` | Tavily MCP server URL |
 
