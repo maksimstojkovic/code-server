@@ -40,7 +40,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_WEB_HOSTNAME` | `0.0.0.0` | Bind address for the opencode web server |
 | `OPENCODE_SERVER_PASSWORD` | *(unset)* | Password for the opencode web server (recommended; unsecured without it) |
 | `OPENROUTER_API_KEY` | *(unset)* | OpenRouter API key; opencode reads it automatically (no manual `/connect` setup) |
-| `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; avoids `/models` setup on first run (doesn't override a model set in the config) |
+| `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; applied on every start (changing it and restarting updates the default). To default to a 9Router model, use `9router/<model>` |
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
 | `N9ROUTER_BASE_URL` | *(unset)* | Enables [9Router](https://github.com/nightwalker89/n9router) as an OpenAI-compatible opencode provider (base URL incl. `/v1`, e.g. `http://host:20128/v1`) |
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |

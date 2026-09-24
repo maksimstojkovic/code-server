@@ -39,9 +39,12 @@ except Exception as e:
 
 changed = []
 
-if model and "model" not in cfg:
-    cfg["model"] = model
-    changed.append(f"model={model}")
+if model:
+    # OPENCODE_MODEL is the source of truth for the default model, so it is
+    # re-applied on every start (updates propagate on restart).
+    if cfg.get("model") != model:
+        cfg["model"] = model
+        changed.append(f"model={model}")
 
 if zdr == "1":
     body = cfg.setdefault("provider", {}).setdefault("openrouter", {}).setdefault("body", {})
