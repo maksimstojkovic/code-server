@@ -75,6 +75,19 @@ if n9_base:
     changed.append("9router provider")
     # Auto-sync the full model list from 9Router (GET /models) when enabled, so
     # every model is selectable; falls back to N9ROUTER_MODEL if the fetch fails.
+    # limit.context + cost.* metadata (env-configurable) make context-% and
+    # cost display work for these custom model IDs.
+    ctx = int(os.environ.get("N9ROUTER_CONTEXT_WINDOW", "200000"))
+    cost_in = float(os.environ.get("N9ROUTER_COST_INPUT", "0"))
+    cost_out = float(os.environ.get("N9ROUTER_COST_OUTPUT", "0"))
+    def model_entry(mid, prev):
+        m = dict(prev)
+        m["name"] = m.get("name") or mid
+        if "limit" not in m:
+            m["limit"] = {"context": ctx}
+        if "cost" not in m:
+            m["cost"] = {"input": cost_in, "output": cost_out}
+        return m
     if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
         synced = None
     else:
@@ -87,7 +100,8 @@ if n9_base:
             with urllib.request.urlopen(req, timeout=10) as r:
                 data = json.load(r)
             ids = [m.get("id") for m in data.get("data", []) if m.get("id")]
-            synced = {i: {"name": i} for i in ids} if ids else None
+            prev = entry.get("models", {})
+            synced = {i: model_entry(i, prev.get(i, {})) for i in ids} if ids else None
         except Exception as e:
             print(f"opencode-config: could not fetch 9router models ({e}); using N9ROUTER_MODEL only")
             synced = None
@@ -97,7 +111,7 @@ if n9_base:
     elif n9_model:
         models = entry.setdefault("models", {})
         if n9_model not in models:
-            models[n9_model] = {"name": n9_model}
+            models[n9_model] = model_entry(n9_model, {})
             changed.append(f"9router model {n9_model}")
 
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
