@@ -96,15 +96,7 @@ if n9_base:
     # Auto-sync the full model list from 9Router (GET /models) when enabled, so
     # every model is selectable; falls back to N9ROUTER_MODEL if the fetch fails.
     # For models with an "openrouter/" prefix, context window and pricing are
-    # auto-derived from OpenRouter's catalog (models.dev, cached 24h); the
-    # N9ROUTER_CONTEXT_WINDOW / COST_INPUT / COST_OUTPUT env vars override that.
-    ctx_env = os.environ.get("N9ROUTER_CONTEXT_WINDOW", "")
-    cost_in_env = os.environ.get("N9ROUTER_COST_INPUT", "")
-    cost_out_env = os.environ.get("N9ROUTER_COST_OUTPUT", "")
-    ctx_default = int(ctx_env) if ctx_env else 200000
-    cost_in_default = float(cost_in_env) if cost_in_env else 0.0
-    cost_out_default = float(cost_out_env) if cost_out_env else 0.0
-
+    # auto-derived from OpenRouter's actual catalog (models.dev, cached 24h).
     md = _load_modelsdev()
     def _or_meta(slug):
         if md is None:
@@ -124,16 +116,13 @@ if n9_base:
         if mid.startswith("openrouter/"):
             meta = _or_meta(mid[len("openrouter/"):])
         if "limit" not in m:
-            if meta and not ctx_env and meta.get("limit", {}).get("context"):
+            if meta and meta.get("limit", {}).get("context"):
                 m["limit"] = {"context": meta["limit"]["context"]}
             else:
-                m["limit"] = {"context": ctx_default}
+                m["limit"] = {"context": 200000}
         if "cost" not in m:
             c = meta.get("cost", {}) if meta else {}
-            m["cost"] = {
-                "input": c.get("input", cost_in_default) if not cost_in_env else cost_in_default,
-                "output": c.get("output", cost_out_default) if not cost_out_env else cost_out_default,
-            }
+            m["cost"] = {"input": c.get("input", 0.0), "output": c.get("output", 0.0)}
         return m
     if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
         synced = None
