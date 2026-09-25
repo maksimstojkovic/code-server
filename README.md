@@ -49,6 +49,8 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 > **9Router token compression:** 9Router's `/v1/compress` endpoint (RTK/headroom) auto-compresses `tool_result` content, saving ~20–40% tokens. It's handled automatically by 9Router — no extra opencode config needed.
 | `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |
 | `TAVILY_MCP_URL` | `https://mcp.tavily.com/mcp` | Tavily MCP server URL |
+| `OUTLINE_API_KEY` | *(unset)* | Enables the Outline notes MCP server when set |
+| `OUTLINE_MCP_URL` | `https://outline.example.com/mcp` | Outline MCP server URL (set to your instance) |
 
 Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
 

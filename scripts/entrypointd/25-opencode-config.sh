@@ -4,6 +4,7 @@
 #  - zero-data-retention on the OpenRouter provider (OPENCODE_ZDR, default on)
 #  - 9Router (self-hosted OpenAI-compatible gateway) when N9ROUTER_BASE_URL set
 #  - Tavily MCP server when TAVILY_API_KEY is set
+#  - Outline MCP server when OUTLINE_API_KEY is set
 set -eu
 
 N9_BASE="${N9ROUTER_BASE_URL:-}"
@@ -22,8 +23,10 @@ case "${OPENCODE_ZDR:-}" in
 esac
 TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
+OUTLINE_KEY="${OUTLINE_API_KEY:-}"
+OUTLINE_URL="${OUTLINE_MCP_URL:-https://outline.example.com/mcp}"
 
-if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ]; then
     exit 0
 fi
 
@@ -33,10 +36,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" <<'EOF'
 import json, os, sys, tempfile
 
-path, model, zdr, tavily_key, tavily_url, n9_base, n9_model = sys.argv[1:8]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url = sys.argv[1:10]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -82,6 +85,15 @@ if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
         "headers": {"Authorization": "Bearer {env:TAVILY_API_KEY}"},
     }
     changed.append("tavily mcp")
+
+if outline_key and "outline" not in cfg.setdefault("mcp", {}):
+    cfg["mcp"]["outline"] = {
+        "type": "remote",
+        "url": outline_url,
+        "enabled": True,
+        "headers": {"Authorization": "Bearer {env:OUTLINE_API_KEY}"},
+    }
+    changed.append("outline mcp")
 
 if not changed:
     raise SystemExit(0)
