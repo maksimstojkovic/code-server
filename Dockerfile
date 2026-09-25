@@ -17,13 +17,7 @@ RUN apt-get update \
         python3-venv \
         tzdata \
         unzip \
-        nodejs \
-        npm \
     && rm -rf /var/lib/apt/lists/*
-
-# mcp-remote: local stdio proxy for remote MCP servers (used for Outline, whose
-# Streamable-HTTP responses opencode's remote transport mis-handles).
-RUN npm install -g mcp-remote@0.14.3
 
 # Install the pinned opencode release (kept at a fixed path so the wrapper
 # below can invoke the real binary).

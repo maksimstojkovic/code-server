@@ -90,13 +90,11 @@ if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     changed.append("tavily mcp")
 
 if outline_key and "outline" not in cfg.setdefault("mcp", {}):
-    # Route through mcp-remote (stdio) because opencode's remote transport
-    # rejects Outline's Streamable-HTTP content-type ("expected
-    # text/event-stream"). mcp-remote handles the HTTP side properly.
     cfg["mcp"]["outline"] = {
-        "type": "local",
-        "command": ["mcp-remote", "--header", "Authorization: Bearer {env:OUTLINE_API_KEY}", outline_url],
+        "type": "remote",
+        "url": outline_url,
         "enabled": True,
+        "headers": {"Authorization": "Bearer {env:OUTLINE_API_KEY}"},
     }
     changed.append("outline mcp")
 

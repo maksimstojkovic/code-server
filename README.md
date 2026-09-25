@@ -50,7 +50,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |
 | `TAVILY_MCP_URL` | `https://mcp.tavily.com/mcp` | Tavily MCP server URL |
 | `OUTLINE_API_KEY` | *(unset)* | Enables the Outline notes MCP server when set |
-| `OUTLINE_MCP_URL` | `https://outline.example.com/mcp` | Outline MCP server URL (set to your instance) |
+| `OUTLINE_MCP_URL` | `https://outline.example.com/mcp` | Outline MCP server URL (set to your instance). `/mcp` must bypass any SSO redirect - the API token does the auth |
 | `ACTUAL_MCP_TOKEN` | *(unset)* | Enables the Actual Budget MCP server when set (Bearer token from actual-mcp-server's `MCP_SSE_AUTHORIZATION`) |
 | `ACTUAL_MCP_URL` | `http://actual-mcp-server:3600/http` | Actual MCP server URL (your actual-mcp-server instance, streamable HTTP) |
 
