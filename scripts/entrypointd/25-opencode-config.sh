@@ -112,17 +112,19 @@ if n9_base:
     def model_entry(mid, prev):
         m = dict(prev)
         m["name"] = m.get("name") or mid
-        # Only attach limit/cost when real data is available (OpenRouter
-        # catalog for "openrouter/*" models). Models without known metadata
-        # get none - opencode then simply doesn't show context-%/cost for them.
-        if mid.startswith("openrouter/"):
-            meta = _or_meta(mid[len("openrouter/"):])
-            if meta:
-                if "limit" not in m and meta.get("limit", {}).get("context"):
-                    m["limit"] = {"context": meta["limit"]["context"]}
-                if "cost" not in m and meta.get("cost"):
-                    c = meta["cost"]
-                    m["cost"] = {"input": c.get("input", 0.0), "output": c.get("output", 0.0)}
+        # Only attach limit/cost when complete real data is available (OpenRouter
+        # catalog for "openrouter/*" models). limit must carry both context and
+        # output (opencode requires limit.output when limit is present); no
+        # hardcoded figures are used. Models without known metadata get none.
+        meta = _or_meta(mid[len("openrouter/"):]) if mid.startswith("openrouter/") else None
+        l = meta.get("limit", {}) if meta else {}
+        if l.get("context") and l.get("output"):
+            m["limit"] = {"context": l["context"], "output": l["output"]}
+        elif "limit" in m and not (m["limit"].get("context") and m["limit"].get("output")):
+            del m["limit"]
+        c = meta.get("cost", {}) if meta else {}
+        if "input" in c and "output" in c:
+            m["cost"] = {"input": c["input"], "output": c["output"]}
         return m
     if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
         synced = None
@@ -146,6 +148,13 @@ if n9_base:
         changed.append(f"9router models ({len(synced)})")
     elif n9_model:
         models = entry.setdefault("models", {})
+        # Repair existing entries too (e.g. incomplete limit from an earlier
+        # seed) so the config stays valid even when the /models sync is off.
+        for mid in list(models.keys()):
+            repaired = model_entry(mid, models[mid])
+            if repaired != models[mid]:
+                models[mid] = repaired
+                changed.append(f"9router model {mid}")
         if n9_model not in models:
             models[n9_model] = model_entry(n9_model, {})
             changed.append(f"9router model {n9_model}")
