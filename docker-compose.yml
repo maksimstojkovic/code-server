@@ -21,6 +21,7 @@ services:
       - N9ROUTER_BASE_URL=${N9ROUTER_BASE_URL:-}
       - N9ROUTER_API_KEY=${N9ROUTER_API_KEY:-}
       - N9ROUTER_MODEL=${N9ROUTER_MODEL:-openrouter/glm-5.3-flash}
+      - N9ROUTER_AUTO_MODELS=${N9ROUTER_AUTO_MODELS:-true}
       - TAVILY_API_KEY=${TAVILY_API_KEY:-}
       - TAVILY_MCP_URL=${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}
       - OUTLINE_API_KEY=${OUTLINE_API_KEY:-}

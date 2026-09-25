@@ -40,7 +40,7 @@ mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
 python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" <<'EOF'
-import json, os, sys, tempfile
+import json, os, sys, tempfile, urllib.request
 
 path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url = sys.argv[1:12]
 try:
@@ -73,7 +73,28 @@ if n9_base:
     entry.setdefault("options", {}).setdefault("baseURL", n9_base)
     entry.setdefault("options", {}).setdefault("apiKey", "{env:N9ROUTER_API_KEY}")
     changed.append("9router provider")
-    if n9_model:
+    # Auto-sync the full model list from 9Router (GET /models) when enabled, so
+    # every model is selectable; falls back to N9ROUTER_MODEL if the fetch fails.
+    if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
+        synced = None
+    else:
+        key = os.environ.get("N9ROUTER_API_KEY", "")
+        req = urllib.request.Request(
+            n9_base.rstrip("/") + "/models",
+            headers={"Authorization": f"Bearer {key}"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.load(r)
+            ids = [m.get("id") for m in data.get("data", []) if m.get("id")]
+            synced = {i: {"name": i} for i in ids} if ids else None
+        except Exception as e:
+            print(f"opencode-config: could not fetch 9router models ({e}); using N9ROUTER_MODEL only")
+            synced = None
+    if synced is not None:
+        entry["models"] = synced
+        changed.append(f"9router models ({len(synced)})")
+    elif n9_model:
         models = entry.setdefault("models", {})
         if n9_model not in models:
             models[n9_model] = {"name": n9_model}
