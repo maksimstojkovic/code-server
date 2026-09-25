@@ -112,17 +112,17 @@ if n9_base:
     def model_entry(mid, prev):
         m = dict(prev)
         m["name"] = m.get("name") or mid
-        meta = None
+        # Only attach limit/cost when real data is available (OpenRouter
+        # catalog for "openrouter/*" models). Models without known metadata
+        # get none - opencode then simply doesn't show context-%/cost for them.
         if mid.startswith("openrouter/"):
             meta = _or_meta(mid[len("openrouter/"):])
-        if "limit" not in m:
-            if meta and meta.get("limit", {}).get("context"):
-                m["limit"] = {"context": meta["limit"]["context"]}
-            else:
-                m["limit"] = {"context": 200000}
-        if "cost" not in m:
-            c = meta.get("cost", {}) if meta else {}
-            m["cost"] = {"input": c.get("input", 0.0), "output": c.get("output", 0.0)}
+            if meta:
+                if "limit" not in m and meta.get("limit", {}).get("context"):
+                    m["limit"] = {"context": meta["limit"]["context"]}
+                if "cost" not in m and meta.get("cost"):
+                    c = meta["cost"]
+                    m["cost"] = {"input": c.get("input", 0.0), "output": c.get("output", 0.0)}
         return m
     if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
         synced = None
