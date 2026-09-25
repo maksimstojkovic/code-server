@@ -40,7 +40,7 @@ mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
 python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" <<'EOF'
-import json, os, sys, tempfile, urllib.request
+import json, os, sys, tempfile, time, urllib.request
 
 path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url = sys.argv[1:12]
 try:
@@ -49,6 +49,26 @@ try:
 except Exception as e:
     print(f"opencode-config: cannot parse {path} ({e}); leaving untouched")
     raise SystemExit(0)
+
+MD_CACHE = os.path.join(os.environ.get("HOME", "/home/coder"), ".cache", "opencode-modelsdev.json")
+def _load_modelsdev():
+    try:
+        if os.path.exists(MD_CACHE) and time.time() - os.path.getmtime(MD_CACHE) < 86400:
+            with open(MD_CACHE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    try:
+        req = urllib.request.Request("https://models.dev/api.json", headers={"User-Agent": "opencode-container"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = json.load(r)
+        os.makedirs(os.path.dirname(MD_CACHE), exist_ok=True)
+        with open(MD_CACHE, "w") as f:
+            json.dump(data, f)
+        return data
+    except Exception as e:
+        print(f"opencode-config: could not fetch models.dev ({e}); using env/default metadata")
+        return None
 
 changed = []
 
@@ -75,18 +95,45 @@ if n9_base:
     changed.append("9router provider")
     # Auto-sync the full model list from 9Router (GET /models) when enabled, so
     # every model is selectable; falls back to N9ROUTER_MODEL if the fetch fails.
-    # limit.context + cost.* metadata (env-configurable) make context-% and
-    # cost display work for these custom model IDs.
-    ctx = int(os.environ.get("N9ROUTER_CONTEXT_WINDOW", "200000"))
-    cost_in = float(os.environ.get("N9ROUTER_COST_INPUT", "0"))
-    cost_out = float(os.environ.get("N9ROUTER_COST_OUTPUT", "0"))
+    # For models with an "openrouter/" prefix, context window and pricing are
+    # auto-derived from OpenRouter's catalog (models.dev, cached 24h); the
+    # N9ROUTER_CONTEXT_WINDOW / COST_INPUT / COST_OUTPUT env vars override that.
+    ctx_env = os.environ.get("N9ROUTER_CONTEXT_WINDOW", "")
+    cost_in_env = os.environ.get("N9ROUTER_COST_INPUT", "")
+    cost_out_env = os.environ.get("N9ROUTER_COST_OUTPUT", "")
+    ctx_default = int(ctx_env) if ctx_env else 200000
+    cost_in_default = float(cost_in_env) if cost_in_env else 0.0
+    cost_out_default = float(cost_out_env) if cost_out_env else 0.0
+
+    md = _load_modelsdev()
+    def _or_meta(slug):
+        if md is None:
+            return None
+        models = md.get("openrouter", {}).get("models", {})
+        if slug in models:
+            return models[slug]
+        for key, m in models.items():
+            if key.endswith("/" + slug):
+                return m
+        return None
+
     def model_entry(mid, prev):
         m = dict(prev)
         m["name"] = m.get("name") or mid
+        meta = None
+        if mid.startswith("openrouter/"):
+            meta = _or_meta(mid[len("openrouter/"):])
         if "limit" not in m:
-            m["limit"] = {"context": ctx}
+            if meta and not ctx_env and meta.get("limit", {}).get("context"):
+                m["limit"] = {"context": meta["limit"]["context"]}
+            else:
+                m["limit"] = {"context": ctx_default}
         if "cost" not in m:
-            m["cost"] = {"input": cost_in, "output": cost_out}
+            c = meta.get("cost", {}) if meta else {}
+            m["cost"] = {
+                "input": c.get("input", cost_in_default) if not cost_in_env else cost_in_default,
+                "output": c.get("output", cost_out_default) if not cost_out_env else cost_out_default,
+            }
         return m
     if os.environ.get("N9ROUTER_AUTO_MODELS", "true").lower() in ("false", "0", "no"):
         synced = None

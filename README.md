@@ -46,8 +46,8 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |
 | `N9ROUTER_MODEL` | `openrouter/glm-5.3-flash` | 9Router model ID. Becomes the default model when 9Router is enabled (`N9ROUTER_BASE_URL` set) |
 | `N9ROUTER_AUTO_MODELS` | `true` | Sync the full 9Router model list (`GET /models`) into opencode at startup |
-| `N9ROUTER_CONTEXT_WINDOW` | `200000` | Context window (tokens) applied to 9Router models so context-% displays |
-| `N9ROUTER_COST_INPUT` / `N9ROUTER_COST_OUTPUT` | `0` / `0` | $ per 1M input/output tokens for 9Router models (for cost display; set real prices) |
+| `N9ROUTER_CONTEXT_WINDOW` | *(auto)* | Context window (tokens) override. For `openrouter/*` models it's auto-derived from OpenRouter's catalog (models.dev) so context-% displays; defaults to 200000 otherwise |
+| `N9ROUTER_COST_INPUT` / `N9ROUTER_COST_OUTPUT` | *(auto)* | $ per 1M tokens override. Auto-derived from OpenRouter for `openrouter/*` models; 0 otherwise |
 | `N9ROUTER_AUTO_MODELS` | `true` | Sync the full 9Router model list (`GET /models`) into opencode at startup so any model can be selected |
 
 > **9Router token compression:** 9Router's `/v1/compress` endpoint (RTK/headroom) auto-compresses `tool_result` content, saving ~20–40% tokens. It's handled automatically by 9Router — no extra opencode config needed.
