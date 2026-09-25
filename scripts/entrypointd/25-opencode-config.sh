@@ -66,19 +66,18 @@ if zdr == "1":
         prov["zdr"] = True
         changed.append("openrouter ZDR")
 
-if n9_base and "9router" not in cfg.setdefault("provider", {}):
-    entry = {
-        "npm": "@ai-sdk/openai-compatible",
-        "name": "9Router",
-        "options": {
-            "baseURL": n9_base,
-            "apiKey": "{env:N9ROUTER_API_KEY}",
-        },
-    }
-    if n9_model:
-        entry["models"] = {n9_model: {"name": n9_model}}
-    cfg["provider"]["9router"] = entry
+if n9_base:
+    entry = cfg.setdefault("provider", {}).setdefault("9router", {})
+    entry.setdefault("npm", "@ai-sdk/openai-compatible")
+    entry.setdefault("name", "9Router")
+    entry.setdefault("options", {}).setdefault("baseURL", n9_base)
+    entry.setdefault("options", {}).setdefault("apiKey", "{env:N9ROUTER_API_KEY}")
     changed.append("9router provider")
+    if n9_model:
+        models = entry.setdefault("models", {})
+        if n9_model not in models:
+            models[n9_model] = {"name": n9_model}
+            changed.append(f"9router model {n9_model}")
 
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     cfg["mcp"]["tavily"] = {
