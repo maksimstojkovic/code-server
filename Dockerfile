@@ -18,7 +18,8 @@ RUN apt-get update \
         python-is-python3 \
         tzdata \
         unzip \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/pip3 /usr/local/bin/pip
 
 # Install the pinned opencode release (kept at a fixed path so the wrapper
 # below can invoke the real binary).
