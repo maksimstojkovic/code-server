@@ -25,6 +25,8 @@ services:
       - TAVILY_MCP_URL=${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}
       - OUTLINE_API_KEY=${OUTLINE_API_KEY:-}
       - OUTLINE_MCP_URL=${OUTLINE_MCP_URL:-https://outline.example.com/mcp}
+      - ACTUAL_MCP_TOKEN=${ACTUAL_MCP_TOKEN:-}
+      - ACTUAL_MCP_URL=${ACTUAL_MCP_URL:-http://actual-mcp-server:3600/http}
     volumes:
       - /media/data/docker/opencode/config:/home/coder
     ports:

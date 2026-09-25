@@ -5,6 +5,7 @@
 #  - 9Router (self-hosted OpenAI-compatible gateway) when N9ROUTER_BASE_URL set
 #  - Tavily MCP server when TAVILY_API_KEY is set
 #  - Outline MCP server when OUTLINE_API_KEY is set
+#  - Actual Budget MCP server when ACTUAL_MCP_TOKEN is set
 set -eu
 
 N9_BASE="${N9ROUTER_BASE_URL:-}"
@@ -25,8 +26,10 @@ TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
 OUTLINE_KEY="${OUTLINE_API_KEY:-}"
 OUTLINE_URL="${OUTLINE_MCP_URL:-https://outline.example.com/mcp}"
+ACTUAL_KEY="${ACTUAL_MCP_TOKEN:-}"
+ACTUAL_URL="${ACTUAL_MCP_URL:-http://actual-mcp-server:3600/http}"
 
-if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ]; then
     exit 0
 fi
 
@@ -36,10 +39,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" <<'EOF'
 import json, os, sys, tempfile
 
-path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url = sys.argv[1:10]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url = sys.argv[1:12]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -94,6 +97,15 @@ if outline_key and "outline" not in cfg.setdefault("mcp", {}):
         "headers": {"Authorization": "Bearer {env:OUTLINE_API_KEY}"},
     }
     changed.append("outline mcp")
+
+if actual_key and "actual" not in cfg.setdefault("mcp", {}):
+    cfg["mcp"]["actual"] = {
+        "type": "remote",
+        "url": actual_url,
+        "enabled": True,
+        "headers": {"Authorization": "Bearer {env:ACTUAL_MCP_TOKEN}"},
+    }
+    changed.append("actual mcp")
 
 if not changed:
     raise SystemExit(0)
