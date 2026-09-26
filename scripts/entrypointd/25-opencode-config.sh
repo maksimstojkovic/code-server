@@ -195,7 +195,7 @@ if local_base and local_model:
         models[mid] = {"name": local_name or mid}
     cfg.setdefault("provider", {})[local_provider] = {
         "npm": "@ai-sdk/openai-compatible",
-        "name": local_name or "Local LLM",
+        "name": "Local LLM",
         "options": {
             "baseURL": local_base,
             "apiKey": "{env:LOCAL_LLM_API_KEY}",
