@@ -231,6 +231,35 @@ if actual_key and "actual" not in cfg.setdefault("mcp", {}):
     }
     changed.append("actual mcp")
 
+# Permission auto-rules from OPENCODE_PERMISSION (JSON), e.g.
+#   {"edit":"allow","read":"allow","list":"allow","glob":"allow","grep":"allow","bash":"ask"}
+# Lets tools proceed without waiting for a confirmation prompt (useful when
+# you can't be at the keyboard/browser, e.g. on mobile). Merged per-key, so
+# keys you set yourself are never overridden.
+perm_raw = os.environ.get("OPENCODE_PERMISSION", "").strip()
+if perm_raw:
+    try:
+        perm = json.loads(perm_raw)
+        if isinstance(perm, dict):
+            existing = cfg.get("permission")
+            if existing is None:
+                cfg["permission"] = perm
+                changed.append("permission rules")
+            elif isinstance(existing, dict):
+                merged = False
+                for k, v in perm.items():
+                    if k not in existing:
+                        existing[k] = v
+                        merged = True
+                if merged:
+                    changed.append("permission rules")
+            else:
+                print("opencode-config: existing permission is not an object; OPENCODE_PERMISSION ignored")
+        else:
+            print("opencode-config: OPENCODE_PERMISSION must be a JSON object; ignoring")
+    except Exception as e:
+        print(f"opencode-config: invalid OPENCODE_PERMISSION JSON ({e}); ignoring")
+
 if not changed:
     raise SystemExit(0)
 
