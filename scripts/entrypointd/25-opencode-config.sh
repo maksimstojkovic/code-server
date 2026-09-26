@@ -192,10 +192,10 @@ if local_base and local_model:
             changed.append(f"removed stale provider {key}")
     models = {}
     for mid in [m.strip() for m in local_model.split(",") if m.strip()]:
-        models[mid] = {"name": mid}
+        models[mid] = {"name": local_name or mid}
     cfg.setdefault("provider", {})[local_provider] = {
         "npm": "@ai-sdk/openai-compatible",
-        "name": local_name or "Local LLM",
+        "name": local_provider,
         "options": {
             "baseURL": local_base,
             "apiKey": "{env:LOCAL_LLM_API_KEY}",
