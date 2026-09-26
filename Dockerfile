@@ -41,8 +41,8 @@ RUN chmod +x /usr/local/bin/opencode
 # client. See patches/osc52-web.sh. The build fails if the upstream bundle no
 # longer matches the pattern, so updates cannot silently regress.
 COPY patches/osc52-web.sh /tmp/osc52-web.sh
-RUN BUNDLE="$(find /usr/lib/code-server -type f -name 'workbench.web.main.internal.js')" \
-    && [ "$(echo "$BUNDLE" | wc -l)" -eq 1 ] \
+RUN BUNDLE="$(grep -rlF '"selection":"clipboard"' /usr/lib/code-server/lib/vscode/out/ 2>/dev/null | head -1)" \
+    && [ -n "$BUNDLE" ] \
     && bash /tmp/osc52-web.sh "$BUNDLE" \
     && rm /tmp/osc52-web.sh
 
