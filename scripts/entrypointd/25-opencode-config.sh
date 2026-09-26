@@ -12,16 +12,20 @@ set -eu
 
 N9_BASE="${N9ROUTER_BASE_URL:-}"
 N9_MODEL="${N9ROUTER_MODEL:-}"
+N9_PROVIDER="${N9ROUTER_PROVIDER:-9router}"
 LOCAL_BASE="${LOCAL_LLM_BASE_URL:-}"
 LOCAL_MODEL="${LOCAL_LLM_MODEL:-}"
 LOCAL_NAME="${LOCAL_LLM_NAME:-}"
+LOCAL_PROVIDER="${LOCAL_LLM_PROVIDER:-local}"
 
 # Default model resolution: a 9Router model takes precedence when 9Router is
 # enabled and N9ROUTER_MODEL is set (so it becomes the web server's default);
-# otherwise OPENCODE_MODEL is used. Applied on every start.
+# otherwise OPENCODE_MODEL is used. Applied on every start. The model is shown
+# as "<N9ROUTER_PROVIDER>/<N9ROUTER_MODEL>" so a custom provider name is used
+# and the model ID may itself contain slashes.
 DEFAULT_MODEL="${OPENCODE_MODEL:-}"
 if [ -n "${N9_BASE}" ] && [ -n "${N9_MODEL}" ]; then
-    DEFAULT_MODEL="9router/${N9_MODEL}"
+    DEFAULT_MODEL="${N9_PROVIDER}/${N9_MODEL}"
 fi
 case "${OPENCODE_ZDR:-}" in
     false|0|no|FALSE|No|False) ZDR=0 ;;
@@ -44,10 +48,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" "${LOCAL_BASE}" "${LOCAL_MODEL}" "${LOCAL_NAME}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${N9_PROVIDER}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" "${LOCAL_BASE}" "${LOCAL_MODEL}" "${LOCAL_NAME}" "${LOCAL_PROVIDER}" <<'EOF'
 import json, os, sys, tempfile, time, urllib.request
 
-path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url, local_base, local_model, local_name = sys.argv[1:15]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, n9_provider, outline_key, outline_url, actual_key, actual_url, local_base, local_model, local_name, local_provider = sys.argv[1:17]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -92,12 +96,12 @@ if zdr == "1":
         changed.append("openrouter ZDR")
 
 if n9_base:
-    entry = cfg.setdefault("provider", {}).setdefault("9router", {})
+    entry = cfg.setdefault("provider", {}).setdefault(n9_provider, {})
     entry.setdefault("npm", "@ai-sdk/openai-compatible")
     entry.setdefault("name", "9Router")
     entry.setdefault("options", {}).setdefault("baseURL", n9_base)
     entry.setdefault("options", {}).setdefault("apiKey", "{env:N9ROUTER_API_KEY}")
-    changed.append("9router provider")
+    changed.append(f"{n9_provider} provider")
     # Auto-sync the full model list from 9Router (GET /models) when enabled, so
     # every model is selectable; falls back to N9ROUTER_MODEL if the fetch fails.
     # For models with an "openrouter/" prefix, context window and pricing are
@@ -166,12 +170,12 @@ if n9_base:
 
 # Local LLM provider (OpenAI-compatible, e.g. Ollama / LM Studio / vLLM).
 # Env is the source of truth when configured; each model ID shows up as an
-# opencode option under provider "local".
+# opencode option under the configured provider (LOCAL_LLM_PROVIDER).
 if local_base and local_model:
     models = {}
     for mid in [m.strip() for m in local_model.split(",") if m.strip()]:
         models[mid] = {"name": local_name or mid}
-    cfg.setdefault("provider", {})["local"] = {
+    cfg.setdefault("provider", {})[local_provider] = {
         "npm": "@ai-sdk/openai-compatible",
         "name": local_name or "Local LLM",
         "options": {
@@ -180,7 +184,7 @@ if local_base and local_model:
         },
         "models": models,
     }
-    changed.append(f"local llm provider ({len(models)})")
+    changed.append(f"{local_provider} provider ({len(models)})")
 
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     cfg["mcp"]["tavily"] = {
