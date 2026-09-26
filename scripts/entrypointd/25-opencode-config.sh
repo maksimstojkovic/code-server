@@ -96,6 +96,16 @@ if zdr == "1":
         changed.append("openrouter ZDR")
 
 if n9_base:
+    # Remove a stale managed provider from a previous run when the provider
+    # name changed (e.g. N9ROUTER_PROVIDER renamed) - prevents duplicates.
+    for key in list(cfg.setdefault("provider", {}).keys()):
+        e = cfg["provider"][key]
+        if key != n9_provider and isinstance(e, dict) \
+           and e.get("npm") == "@ai-sdk/openai-compatible" \
+           and e.get("name") == "9Router" \
+           and e.get("options", {}).get("baseURL") == n9_base:
+            del cfg["provider"][key]
+            changed.append(f"removed stale provider {key}")
     entry = cfg.setdefault("provider", {}).setdefault(n9_provider, {})
     entry.setdefault("npm", "@ai-sdk/openai-compatible")
     entry.setdefault("name", "9Router")
@@ -172,6 +182,14 @@ if n9_base:
 # Env is the source of truth when configured; each model ID shows up as an
 # opencode option under the configured provider (LOCAL_LLM_PROVIDER).
 if local_base and local_model:
+    # Remove a stale managed local provider when LOCAL_LLM_PROVIDER changed.
+    for key in list(cfg.setdefault("provider", {}).keys()):
+        e = cfg["provider"][key]
+        if key != local_provider and isinstance(e, dict) \
+           and e.get("npm") == "@ai-sdk/openai-compatible" \
+           and e.get("options", {}).get("baseURL") == local_base:
+            del cfg["provider"][key]
+            changed.append(f"removed stale provider {key}")
     models = {}
     for mid in [m.strip() for m in local_model.split(",") if m.strip()]:
         models[mid] = {"name": local_name or mid}
