@@ -6,10 +6,15 @@
 #  - Tavily MCP server when TAVILY_API_KEY is set
 #  - Outline MCP server when OUTLINE_API_KEY is set
 #  - Actual Budget MCP server when ACTUAL_MCP_TOKEN is set
+#  - a local LLM provider (OpenAI-compatible, e.g. Ollama/LM Studio) when
+#    LOCAL_LLM_BASE_URL and LOCAL_LLM_MODEL are set
 set -eu
 
 N9_BASE="${N9ROUTER_BASE_URL:-}"
 N9_MODEL="${N9ROUTER_MODEL:-}"
+LOCAL_BASE="${LOCAL_LLM_BASE_URL:-}"
+LOCAL_MODEL="${LOCAL_LLM_MODEL:-}"
+LOCAL_NAME="${LOCAL_LLM_NAME:-}"
 
 # Default model resolution: a 9Router model takes precedence when 9Router is
 # enabled and N9ROUTER_MODEL is set (so it becomes the web server's default);
@@ -29,7 +34,7 @@ OUTLINE_URL="${OUTLINE_MCP_URL:-https://outline.example.com/mcp}"
 ACTUAL_KEY="${ACTUAL_MCP_TOKEN:-}"
 ACTUAL_URL="${ACTUAL_MCP_URL:-http://actual-mcp-server:3600/http}"
 
-if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ] && [ -z "${LOCAL_BASE}" ]; then
     exit 0
 fi
 
@@ -39,10 +44,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" "${LOCAL_BASE}" "${LOCAL_MODEL}" "${LOCAL_NAME}" <<'EOF'
 import json, os, sys, tempfile, time, urllib.request
 
-path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url = sys.argv[1:12]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, outline_key, outline_url, actual_key, actual_url, local_base, local_model, local_name = sys.argv[1:15]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -158,6 +163,24 @@ if n9_base:
         if n9_model not in models:
             models[n9_model] = model_entry(n9_model, {})
             changed.append(f"9router model {n9_model}")
+
+# Local LLM provider (OpenAI-compatible, e.g. Ollama / LM Studio / vLLM).
+# Env is the source of truth when configured; each model ID shows up as an
+# opencode option under provider "local".
+if local_base and local_model:
+    models = {}
+    for mid in [m.strip() for m in local_model.split(",") if m.strip()]:
+        models[mid] = {"name": local_name or mid}
+    cfg.setdefault("provider", {})["local"] = {
+        "npm": "@ai-sdk/openai-compatible",
+        "name": local_name or "Local LLM",
+        "options": {
+            "baseURL": local_base,
+            "apiKey": "{env:LOCAL_LLM_API_KEY}",
+        },
+        "models": models,
+    }
+    changed.append(f"local llm provider ({len(models)})")
 
 if tavily_key and "tavily" not in cfg.setdefault("mcp", {}):
     cfg["mcp"]["tavily"] = {

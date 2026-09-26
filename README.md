@@ -46,6 +46,10 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |
 | `N9ROUTER_AUTO_MODELS` | `true` | Sync the full 9Router model list (`GET /models`) into opencode at startup |
 | `N9ROUTER_MODEL` | `openrouter/glm-5.3-flash` | 9Router model ID. Becomes the default model when 9Router is enabled (`N9ROUTER_BASE_URL` set) |
+| `LOCAL_LLM_BASE_URL` | *(unset)* | Registers an OpenAI-compatible local LLM provider (Ollama/LM Studio/vLLM) when set |
+| `LOCAL_LLM_MODEL` | *(unset)* | Model ID(s) to expose (comma-separated for multiple). Default via `OPENCODE_MODEL=local/<model>` |
+| `LOCAL_LLM_NAME` | `Local LLM` | Display name for the local provider |
+| `LOCAL_LLM_API_KEY` | *(unset)* | Optional key for local servers that require one |
 
 > **9Router token compression:** 9Router's `/v1/compress` endpoint (RTK/headroom) auto-compresses `tool_result` content, saving ~20–40% tokens. It's handled automatically by 9Router — no extra opencode config needed.
 | `TAVILY_API_KEY` | *(unset)* | Enables the Tavily web-search MCP server in opencode when set |
