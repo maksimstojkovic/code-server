@@ -14,6 +14,11 @@ HOSTNAME="${OPENCODE_WEB_HOSTNAME:-0.0.0.0}"
 WORKDIR="${DEFAULT_WORKSPACE:-/home/coder/workspace}"
 LOG="${OPENCODE_WEB_LOG:-/home/coder/opencode-web.log}"
 
+# Keep the log from growing unbounded in the volume: rotate if over ~10MB.
+if [ -f "${LOG}" ] && [ "$(stat -c %s "${LOG}" 2>/dev/null || echo 0)" -gt 10485760 ]; then
+    mv "${LOG}" "${LOG}.1" 2>/dev/null || true
+fi
+
 # The real binary path, bypassing the /usr/local/bin/opencode wrapper (which
 # would otherwise wait/probe for this very server before starting it).
 OPCODE_BIN="${OPCODE_REAL_BIN:-/usr/local/lib/opencode/opencode}"

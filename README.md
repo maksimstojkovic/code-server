@@ -79,6 +79,10 @@ git pull && docker compose pull && docker compose up -d
 - Behind [SWAG](https://docs.linuxserver.io/general/swag/), use the bundled `code-server` proxy conf (it enables websockets) and point it at this container.
 - When `OPENCODE_WEB=true`, the opencode web server is available on port `4096`.
 
+## Known issues
+
+- **Mobile web: permission/confirmation prompts don't render** (upstream opencode bug). The agent waits but no prompt is visible. Workaround: set `OPENCODE_PERMISSION` to auto-allow the actions you use (e.g. `{"edit":"allow","read":"allow","bash":"ask"}`).
+
 ## Repository layout
 
 | Path | Purpose |
