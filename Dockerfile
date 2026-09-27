@@ -52,8 +52,8 @@ RUN BUNDLE="$(grep -rlF '"selection":"clipboard"' /usr/lib/code-server/lib/vscod
 COPY scripts/entrypointd/ /usr/local/share/entrypoint.d/
 RUN chmod +x /usr/local/share/entrypoint.d/*
 ENV ENTRYPOINTD=/usr/local/share/entrypoint.d
-ENV EDITOR=vim
-ENV VISUAL=vim
+ENV EDITOR=nano
+ENV VISUAL=nano
 
 # Wrapper entrypoint: enables PUID/PGID as plain environment variables.
 # Must start as root so the wrapper can remap the built-in "coder" user and
