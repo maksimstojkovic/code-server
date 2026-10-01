@@ -38,7 +38,7 @@ fi
 
 first="${1:-}"
 if [ -z "${first}" ]; then
-    exec "$REAL" attach "${URL}" "$@"
+    exec "$REAL" attach "${URL}" --dir "$PWD" "$@"
 fi
 
 case "${first}" in
@@ -46,9 +46,9 @@ case "${first}" in
         exec "$REAL" "$@" ;;
     run)
         shift
-        exec "$REAL" run --attach "${URL}" "$@" ;;
+        exec "$REAL" run --attach "${URL}" --dir "$PWD" "$@" ;;
     -*)
-        exec "$REAL" attach "${URL}" "$@" ;;
+        exec "$REAL" attach "${URL}" --dir "$PWD" "$@" ;;
     *)
         exec "$REAL" attach "${URL}" --dir "${first}" "${@:2}" ;;
 esac
