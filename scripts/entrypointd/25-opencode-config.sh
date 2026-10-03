@@ -37,8 +37,9 @@ OUTLINE_KEY="${OUTLINE_API_KEY:-}"
 OUTLINE_URL="${OUTLINE_MCP_URL:-https://outline.example.com/mcp}"
 ACTUAL_KEY="${ACTUAL_MCP_TOKEN:-}"
 ACTUAL_URL="${ACTUAL_MCP_URL:-http://actual-mcp-server:3600/http}"
+PLUGINS="${OPENCODE_PLUGINS:-}"
 
-if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ] && [ -z "${LOCAL_BASE}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ] && [ -z "${LOCAL_BASE}" ] && [ -z "${PLUGINS}" ]; then
     exit 0
 fi
 
@@ -259,6 +260,22 @@ if perm_raw:
             print("opencode-config: OPENCODE_PERMISSION must be a JSON object; ignoring")
     except Exception as e:
         print(f"opencode-config: invalid OPENCODE_PERMISSION JSON ({e}); ignoring")
+
+# Plugins from OPENCODE_PLUGINS (comma-separated npm packages). Ensured in the
+# config `plugin` list; e.g. the ponytail plugin by default.
+plugins = [p.strip() for p in os.environ.get("OPENCODE_PLUGINS", "").split(",") if p.strip()]
+if plugins:
+    plist = cfg.get("plugin")
+    if not isinstance(plist, list):
+        plist = []
+        cfg["plugin"] = plist
+    added = False
+    for p in plugins:
+        if p not in plist:
+            plist.append(p)
+            added = True
+    if added:
+        changed.append("plugins")
 
 if not changed:
     raise SystemExit(0)

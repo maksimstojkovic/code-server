@@ -44,6 +44,7 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_MODEL` | `openrouter/z-ai/glm-5.3-flash` | Default model; applied on every start (changing it and restarting updates the default). To default to a 9Router model, use `9router/<model>` |
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
 | `OPENCODE_PERMISSION` | *(unset)* | JSON auto-permission rules, e.g. `{"edit":"allow","read":"allow","bash":"ask"}`. Auto-allows actions so tools don't block on a confirmation prompt (e.g. on mobile). Merged per-key |
+| `OPENCODE_PLUGINS` | `@dietrichgebert/ponytail` | Comma-separated opencode plugins (npm packages). Default enables the [ponytail](https://github.com/dietrichgebert/ponytail) lazy-senior-dev plugin |
 | `N9ROUTER_BASE_URL` | *(unset)* | Enables [9Router](https://github.com/nightwalker89/n9router) as an OpenAI-compatible opencode provider (base URL incl. `/v1`, e.g. `http://host:20128/v1`) |
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |
 | `N9ROUTER_AUTO_MODELS` | `true` | Sync the full 9Router model list (`GET /models`) into opencode at startup |
