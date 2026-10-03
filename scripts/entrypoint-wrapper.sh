@@ -56,6 +56,10 @@ if [ "$(id -u)" = "0" ]; then
         chown -R "$(id -u coder):$(id -g coder)" /home/coder
     fi
 
+    # Ensure /tmp is world-writable (sticky) for the runtime user, regardless
+    # of the base image or any bind mount that may have changed it.
+    chmod 1777 /tmp 2>/dev/null || true
+
     mkdir -p "${DEFAULT_WORKSPACE}"
     chown "$(id -u coder):$(id -g coder)" "${DEFAULT_WORKSPACE}" 2>/dev/null || true
 
