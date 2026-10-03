@@ -16,12 +16,20 @@ RUN apt-get update \
         python3-pip \
         python3-venv \
         python-is-python3 \
-        nodejs \
-        npm \
+        build-essential \
+        python3-dev \
         tzdata \
         unzip \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/pip3 /usr/local/bin/pip
+
+# Node.js 22 LTS (official build - apt's nodejs is too old for @actual-app/cli).
+# Includes npm; build-essential/python3-dev above satisfy node-gyp native builds.
+ARG NODE_VERSION=22.23.3
+RUN ARCH="$(uname -m | sed 's/x86_64/x64/; s/aarch64/arm64/')" \
+    && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz" \
+       | tar -xz -C /usr/local --strip-components=1 \
+    && node --version && npm --version
 
 # Bake in opencode plugins and CLI tools (available offline at runtime).
 # NODE_PATH lets Node/Bun resolve globally-installed packages by name.
