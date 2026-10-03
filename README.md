@@ -6,6 +6,7 @@ Docker image with [code-server](https://github.com/coder/code-server) and [openc
 
 - [opencode](https://opencode.ai) CLI installed and pinned
 - vim, python3, pip and venv preinstalled
+- [ponytail](https://github.com/dietrichgebert/ponytail) skills preinstalled for opencode (lazy-senior-dev mode, default intensity: full)
 - Select-to-copy works in the browser terminal
 - Terminal Ctrl+shortcuts reach the shell (nano, TUI apps), copy/paste via `Ctrl+Shift+C/V`
 - Workspace trust disabled, no welcome screen or AI UI

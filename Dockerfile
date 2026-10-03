@@ -52,6 +52,10 @@ RUN BUNDLE="$(grep -rlF '"selection":"clipboard"' /usr/lib/code-server/lib/vscod
 COPY scripts/entrypointd/ /usr/local/share/entrypoint.d/
 RUN chmod +x /usr/local/share/entrypoint.d/*
 ENV ENTRYPOINTD=/usr/local/share/entrypoint.d
+
+# Ponytail skills (lazy-senior-dev mode for opencode), kept outside the volume;
+# the 15-ponytail-skills hook symlinks them into ~/.config/opencode/skills.
+COPY ponytail/skills/ /usr/local/share/opencode/skills/
 ENV EDITOR=nano
 ENV VISUAL=nano
 
