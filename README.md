@@ -45,6 +45,9 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `OPENCODE_ZDR` | `true` | Zero-data-retention on OpenRouter (sends `provider.zdr=true` per request, restricting to non-retaining endpoints). Set `false` to allow providers that may retain data |
 | `OPENCODE_PERMISSION` | *(unset)* | JSON auto-permission rules, e.g. `{"edit":"allow","read":"allow","bash":"ask"}`. Auto-allows actions so tools don't block on a confirmation prompt (e.g. on mobile). Merged per-key |
 | `OPENCODE_PLUGINS` | `@dietrichgebert/ponytail` | Comma-separated opencode plugins (npm packages). Default enables the [ponytail](https://github.com/dietrichgebert/ponytail) lazy-senior-dev plugin |
+| `ACTUAL_SERVER_URL` | `http://actual:5006` | Actual Budget server URL for the [@actual-app/cli](https://www.npmjs.com/package/@actual-app/cli) |
+| `ACTUAL_SYNC_ID` | *(unset)* | Actual Budget sync ID (Settings → Advanced → Sync ID) |
+| `ACTUAL_PASSWORD` | *(unset)* | Actual Budget server password |
 | `N9ROUTER_BASE_URL` | *(unset)* | Enables [9Router](https://github.com/nightwalker89/n9router) as an OpenAI-compatible opencode provider (base URL incl. `/v1`, e.g. `http://host:20128/v1`) |
 | `N9ROUTER_API_KEY` | *(unset)* | 9Router dashboard API key |
 | `N9ROUTER_AUTO_MODELS` | `true` | Sync the full 9Router model list (`GET /models`) into opencode at startup |
