@@ -220,6 +220,14 @@ if outline_key and "outline" not in cfg.setdefault("mcp", {}):
     }
     changed.append("outline mcp")
 
+# Actual is handled via the @actual-app/cli, not an MCP server. Purge any
+# stale "actual" MCP entry that earlier image versions may have seeded.
+if "actual" in cfg.get("mcp", {}):
+    del cfg["mcp"]["actual"]
+    if not cfg["mcp"]:
+        del cfg["mcp"]
+    changed.append("removed actual mcp")
+
 # Permission auto-rules from OPENCODE_PERMISSION (JSON), e.g.
 #   {"edit":"allow","read":"allow","list":"allow","glob":"allow","grep":"allow","bash":"ask"}
 # Lets tools proceed without waiting for a confirmation prompt (useful when
