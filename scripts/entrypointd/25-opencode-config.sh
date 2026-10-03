@@ -5,7 +5,6 @@
 #  - 9Router (self-hosted OpenAI-compatible gateway) when N9ROUTER_BASE_URL set
 #  - Tavily MCP server when TAVILY_API_KEY is set
 #  - Outline MCP server when OUTLINE_API_KEY is set
-#  - Actual Budget MCP server when ACTUAL_MCP_TOKEN is set
 #  - a local LLM provider (OpenAI-compatible, e.g. Ollama/LM Studio) when
 #    LOCAL_LLM_BASE_URL and LOCAL_LLM_MODEL are set
 set -eu
@@ -35,11 +34,9 @@ TAVILY_KEY="${TAVILY_API_KEY:-}"
 TAVILY_URL="${TAVILY_MCP_URL:-https://mcp.tavily.com/mcp}"
 OUTLINE_KEY="${OUTLINE_API_KEY:-}"
 OUTLINE_URL="${OUTLINE_MCP_URL:-https://outline.example.com/mcp}"
-ACTUAL_KEY="${ACTUAL_MCP_TOKEN:-}"
-ACTUAL_URL="${ACTUAL_MCP_URL:-http://actual-mcp-server:3600/http}"
 PLUGINS="${OPENCODE_PLUGINS:-}"
 
-if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${ACTUAL_KEY}" ] && [ -z "${LOCAL_BASE}" ] && [ -z "${PLUGINS}" ]; then
+if [ -z "${DEFAULT_MODEL}" ] && [ "${ZDR}" != "1" ] && [ -z "${TAVILY_KEY}" ] && [ -z "${N9_BASE}" ] && [ -z "${OUTLINE_KEY}" ] && [ -z "${LOCAL_BASE}" ] && [ -z "${PLUGINS}" ]; then
     exit 0
 fi
 
@@ -49,10 +46,10 @@ CONFIG="${CONFIG_DIR}/opencode.json"
 mkdir -p "${CONFIG_DIR}"
 [ -f "${CONFIG}" ] || printf '{}\n' > "${CONFIG}"
 
-python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${N9_PROVIDER}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${ACTUAL_KEY}" "${ACTUAL_URL}" "${LOCAL_BASE}" "${LOCAL_MODEL}" "${LOCAL_NAME}" "${LOCAL_PROVIDER}" <<'EOF'
+python3 - "$CONFIG" "${DEFAULT_MODEL}" "${ZDR}" "${TAVILY_KEY}" "${TAVILY_URL}" "${N9_BASE}" "${N9_MODEL}" "${N9_PROVIDER}" "${OUTLINE_KEY}" "${OUTLINE_URL}" "${LOCAL_BASE}" "${LOCAL_MODEL}" "${LOCAL_NAME}" "${LOCAL_PROVIDER}" <<'EOF'
 import json, os, sys, tempfile, time, urllib.request
 
-path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, n9_provider, outline_key, outline_url, actual_key, actual_url, local_base, local_model, local_name, local_provider = sys.argv[1:17]
+path, model, zdr, tavily_key, tavily_url, n9_base, n9_model, n9_provider, outline_key, outline_url, local_base, local_model, local_name, local_provider = sys.argv[1:15]
 try:
     with open(path) as f:
         cfg = json.load(f)
@@ -222,15 +219,6 @@ if outline_key and "outline" not in cfg.setdefault("mcp", {}):
         "headers": {"Authorization": "Bearer {env:OUTLINE_API_KEY}"},
     }
     changed.append("outline mcp")
-
-if actual_key and "actual" not in cfg.setdefault("mcp", {}):
-    cfg["mcp"]["actual"] = {
-        "type": "remote",
-        "url": actual_url,
-        "enabled": True,
-        "headers": {"Authorization": "Bearer {env:ACTUAL_MCP_TOKEN}"},
-    }
-    changed.append("actual mcp")
 
 # Permission auto-rules from OPENCODE_PERMISSION (JSON), e.g.
 #   {"edit":"allow","read":"allow","list":"allow","glob":"allow","grep":"allow","bash":"ask"}

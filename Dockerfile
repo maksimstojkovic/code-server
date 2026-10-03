@@ -23,6 +23,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s /usr/bin/pip3 /usr/local/bin/pip
 
+# Bake in opencode plugins and CLI tools (available offline at runtime).
+# NODE_PATH lets Node/Bun resolve globally-installed packages by name.
+RUN npm install -g --no-audit --no-fund \
+        @dietrichgebert/ponytail@4.10.3 \
+        @actual-app/cli@26.10.0 \
+    && npm cache clean --force
+ENV NODE_PATH="/usr/local/lib/node_modules:/usr/lib/node_modules"
+
 # Install the pinned opencode release (kept at a fixed path so the wrapper
 # below can invoke the real binary).
 RUN HOME=/usr/local/share/opencode-install \

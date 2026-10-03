@@ -6,7 +6,7 @@ Docker image with [code-server](https://github.com/coder/code-server) and [openc
 
 - [opencode](https://opencode.ai) CLI installed and pinned
 - vim, python3, pip and venv preinstalled
-- [ponytail](https://github.com/dietrichgebert/ponytail) skills preinstalled for opencode (lazy-senior-dev mode, default intensity: full)
+- Node.js + npm, with the [ponytail](https://github.com/dietrichgebert/ponytail) opencode plugin and [@actual-app/cli](https://www.npmjs.com/package/@actual-app/cli) (Actual Budget) baked in
 - Select-to-copy works in the browser terminal
 - Terminal Ctrl+shortcuts reach the shell (nano, TUI apps), copy/paste via `Ctrl+Shift+C/V`
 - Workspace trust disabled, no welcome screen or AI UI
@@ -62,8 +62,6 @@ Copy `.env.example` to `.env` and adjust. All variables are optional.
 | `TAVILY_MCP_URL` | `https://mcp.tavily.com/mcp` | Tavily MCP server URL |
 | `OUTLINE_API_KEY` | *(unset)* | Enables the Outline notes MCP server when set |
 | `OUTLINE_MCP_URL` | `https://outline.example.com/mcp` | Outline MCP server URL (set to your instance). `/mcp` must bypass any SSO redirect - the API token does the auth |
-| `ACTUAL_MCP_TOKEN` | *(unset)* | Enables the Actual Budget MCP server when set (Bearer token from actual-mcp-server's `MCP_SSE_AUTHORIZATION`) |
-| `ACTUAL_MCP_URL` | `http://actual-mcp-server:3600/http` | Actual MCP server URL (your actual-mcp-server instance, streamable HTTP) |
 
 Advanced: `BIND_ADDR` overrides the full listen address (`host:port`) of code-server.
 
