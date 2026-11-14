@@ -6,7 +6,7 @@ Docker image with [code-server](https://github.com/coder/code-server) and [openc
 
 - [opencode](https://opencode.ai) CLI installed and pinned
 - vim, python3, pip and venv preinstalled
-- Node.js + npm, with the [ponytail](https://github.com/dietrichgebert/ponytail) opencode plugin and [@actual-app/cli](https://www.npmjs.com/package/@actual-app/cli) (Actual Budget) baked in
+- Node.js + npm, with the [ponytail](https://github.com/dietrichgebert/ponytail) opencode plugin, [@actual-app/cli](https://www.npmjs.com/package/@actual-app/cli) (Actual Budget) and the [Claude Code](https://github.com/anthropics/claude-code) CLI baked in
 - Select-to-copy works in the browser terminal
 - Terminal Ctrl+shortcuts reach the shell (nano, TUI apps), copy/paste via `Ctrl+Shift+C/V`
 - Workspace trust disabled, no welcome screen or AI UI

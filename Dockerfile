@@ -36,6 +36,7 @@ RUN ARCH="$(uname -m | sed 's/x86_64/x64/; s/aarch64/arm64/')" \
 RUN npm install -g --no-audit --no-fund \
         @dietrichgebert/ponytail@4.10.3 \
         @actual-app/cli@26.10.0 \
+        @anthropic-ai/claude-code@2.1.325 \
     && npm cache clean --force
 ENV NODE_PATH="/usr/local/lib/node_modules:/usr/lib/node_modules"
 
